@@ -11,6 +11,7 @@
 #include <Hash.h>                   // https://github.com/bbx10/Hash_tng/archive/refs/heads/master.zip
 #include "src/WiFiConnect.h"
 #include "src/WiFiConnectParam.h"
+#include "src/NTPupdate.h"
 #include "src/FONT16.h"
 #include "src/FONT16_CHS.h"
 #include "src/FONT28.h"
@@ -4044,6 +4045,7 @@ void TuneUp() {
             rabbitearspi[i] = 0;
           }
         }
+        NTPupdate();
       }
       frequency = LowEdgeSet * 10;
       if (fmdefaultstepsize == 2 && stepsize == 0 && frequency == 8750) frequency = 8775;
