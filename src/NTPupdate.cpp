@@ -1,8 +1,8 @@
 #include "NTPupdate.h"
 
 // send an NTP request to the time server at the given address
-void sendNTPpacket(IPAddress &address)
-{
+void sendNTPpacket(IPAddress &address) {
+  byte packetBuffer[NTP_PACKET_SIZE];
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   // Initialize values needed to form NTP request
@@ -25,6 +25,7 @@ void sendNTPpacket(IPAddress &address)
 
 time_t getNtpTime() {
   IPAddress ntpServerIP; // NTP server's ip address
+  byte packetBuffer[NTP_PACKET_SIZE];
 
   while (Udp.parsePacket() > 0) ; // discard any previously received packets
   WiFi.hostByName(ntpServerName, ntpServerIP);
@@ -47,7 +48,7 @@ time_t getNtpTime() {
 }
 
 void NTPupdate() {
-  if (!wifi) { return }
+  if (!wifi) { return; }
   time_t time = getNtpTime();
   if (time) {
     rtc.setTime(time);
