@@ -1,11 +1,11 @@
 #ifndef LANGUAGE_H
 #define LANGUAGE_H
 
-#define VERSION "v2.11.8"
+#define VERSION "v2.11.13"
 
 // [number of languages][number of texts]
 
-static const char* const myLanguage[18][285] PROGMEM = {
+static const char* const myLanguage[18][286] PROGMEM = {
   { "English", // English
     "Rotary direction changed", // 1
     "Please release button", // 2
@@ -290,7 +290,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Wait time on\nsignal only", // 281
     "Press highlighted corner", // 282
     "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Screen inversion toggles", // 284
+    "Select Bandwidth" // 285
   },
 
   { "Nederlands", // Dutch
@@ -577,7 +578,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Wachttijd alleen\nbij signaal", // 281
     "Druk op aangegeven hoeken", // 282
     "om scherm te calibreren", // 283
-    "Scherm inversie gewijzigd" // 284
+    "Scherm inversie gewijzigd", // 284
+    "Selecteer bandbreedte" // 285
   },
 
   { "Polski", // Polish
@@ -864,7 +866,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Czekaj tylko gdy\nwykryto stację", // 281
     "Naciśnij zaznaczony róg", // 282
     "Aby skalibrować ekran", // 283
-    "Inwersja kolorów wyświetlacza" // 284
+    "Inwersja kolorów wyświetlacza", // 284
+    "Wybierz szer. pasma" // 285
   },
 
   { "Hrvatski", // Croatian
@@ -1151,7 +1154,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Wait time on\nsignal only", // 281
     "Press highlighted corner", // 282
     "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Screen inversion toggles", // 284
+    "Select Bandwidth" // 285
   },
 
   { "Ελληνικά", // Greek
@@ -1438,7 +1442,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Αναμονή μόνο σε\nυπάρξη σήματος", // 281
     "Πιέστε την\nεπισημασμένη γωνία", // 282
     "Για βαθμονόμηση\nτης οθόνης αφής", // 283
-    "Εναλλαγή αναστροφής οθόνης" // 284
+    "Εναλλαγή αναστροφής οθόνης", // 284
+    "Επιλογή εύρους μπάντας" // 285
   },
 
   { "Română", // Romanian
@@ -1725,7 +1730,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Wait time on\nsignal only", // 281
     "Press highlighted corner", // 282
     "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Screen inversion toggles", // 284
+    "Select Bandwidth" // 285
   },
 
   { "Deutsch", // German
@@ -2012,7 +2018,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Wartezeit nur wenn\nSignal vorhanden", // 281
     "Markierte Ecke drücken", // 282
     "zum Kalibrieren des Touchscrees", // 283
-    "Bildschirmumkehrung umschalten" // 284
+    "Bildschirmumkehrung umschalten", // 284
+    "Bandbreite wählen" // 285
   },
 
   { "Český", // Czech
@@ -2299,7 +2306,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Wait time on\nsignal only", // 281
     "Press highlighted corner", // 282
     "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Screen inversion toggles", // 284
+    "Select Bandwidth" // 285
   },
 
   { "Magyar", // Hungarian
@@ -2565,28 +2573,29 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Kezdeti", // 260
     "Mindig", //261
     "Óra mutatása", // 262
-    "Show long PS", // 263
-    "Start frequency", // 264
-    "Stop frequency", // 265
-    "Start memory channel", // 266
-    "Stop memory channel", // 267
-    "Only store with RDS", // 268
-    "Start auto memory", // 269
-    "Auto memory", // 270
+    "Hosszú PS mutatása", // 263
+    "Indítási frekvencia", // 264
+    "Befejezési frekvencia", // 265
+    "Memóriacsatorna indítása", // 266
+    "Memóriacsatorna leállítása", // 267
+    "Csak RDS-el tárolja", // 268
+    "Auto memória indítása", // 269
+    "Auto memória", // 270
     "Stationlist ID", // 271
-    "Found", // 272
-    "Abort! Out of memorychannels", // 273
-    "Abort! User pressed button", // 274
-    "Scan finished without errors", // 275
-    "Clear memory channels", // 276
-    "cleared", // 277
-    "Prevent double PI", // 278
-    "Range", // 279
-    "Full", // 280
-    "Wait time on\nsignal only", // 281
-    "Press highlighted corner", // 282
-    "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Megtalálva", // 272
+    "Megszakítva! Nincs\nmemóriacsatorna", // 273
+    "Megszakítva! Felhasználó\nmegnyomta a gombot", // 274
+    "Szkennelés hiba\nnélkül befejeződött", // 275
+    "Memóriacsatornák törlése", // 276
+    "törölve", // 277
+    "Kettős PI megakadályozása", // 278
+    "Tartomány", // 279
+    "Teljes", // 280
+    "Várakozási idő\ncsak jel esetén", // 281
+    "Nyomd meg a kiemelt sarkot", // 282
+    "Érintőképernyő kalibrálásához", // 283
+    "Képernyő inverzió kapcsoló", // 284
+    "Sávszélesség választása" // 285
   },
 
   { "Français", // French
@@ -2873,8 +2882,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Attendre que lorsque\nle signal existe", // 281
     "Appuyez sur l'angle\nmis en évidence", // 282
     "Pour calibrer l'écran tactile", // 283
-    "Inversion d'affichage bascules" // 284
-
+    "Inversion d'affichage bascules", // 284
+    "Sélectionner la bande passante" // 285
   },
 
   { "Български", // Bulgarian
@@ -3161,7 +3170,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Wait time on\nsignal only", // 281
     "Press highlighted corner", // 282
     "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Screen inversion toggles", // 284
+    "Select Bandwidth" // 285
   },
 
   { "Русский", // Russian
@@ -3200,7 +3210,7 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "ВЫКЛ.", // 33
     "СКАНИРОВАНИЕ", // 34
     "Тюнер не обнаружен", // 35
-    "AM Antenna gain", // 36
+    "Аттеньюатор AM-антенны", // 36
     "FM AGC", // 37
     "Уровень ошибок RDS", // 38
     "Язык меню", // 39
@@ -3226,7 +3236,7 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Отображать длину волны", // 59
     "Фильтр RDS-данных", // 60
     "Ошибки PI-кода", // 61
-    "Отображать шумодав", // 62 NEEDS NEW TRANSLATION, ENGLISH: USE SQUELCH
+    "Отображать шумодав", // 62
     "Уровень модуляции", // 63
     "AM Noise blanker", // 64
     "FM Noise blanker", // 65
@@ -3247,7 +3257,7 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "мин.", // 80
     "Частота шины дисплея SPI", // 81
     "Чувствительность сканирования", // 82
-    "Не использовать AM", // 83
+    "Не использовать", // 83
     "Версия прошивки -", // 84
     "Шрифт индикации частоты", // 85
     "Auto", // 86
@@ -3264,8 +3274,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Калибровка уровня:", // 97
     "Измерять сигнал в:", // 98
     "Переключаться по AF:", // 99
-    "Активные диапазоны:", // 100
-    "Активные диапазоны:", // 101
+    "Активные диапазоны FM:", // 100
+    "Активные диапазоны AM:", // 101
     " ДВ", // 102
     " СВ", // 103
     " КВ", // 104
@@ -3380,75 +3390,76 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Настройки FM DX сканера", // 213
     "Прервано! Стартовый канал\nпомечен для пропуска.", // 214
     "Сортировка AF-частот", // 215
-    "Логика работы с \nканалами памяти", // 216
+    "Логика работы с\nканалами памяти", // 216
     "Кроме", // 217
     "Только", // 218
-    "Автоматическая отмена \nсканирования", // 219
+    "Автоматическая отмена\nсканирования", // 219
     "При корректном PI", // 220
     "При наличии сигнала", // 221
     "Отключать аудио\nпри сканировании", // 222
     "Эфир", // 223
-    "5 сек. зажатия кнопки диапазона", // 224
-    "Приемник выключен", // 225
-    "Экран выключен", // 226
-    "Выключено", // 227
-    "Не определено", // 228
-    "Новости", // 229
-    "Аналитика", // 230
-    "Информация", // 231
-    "Спорт", // 232
-    "Образование", // 233
-    "Драма", // 234
-    "Культура", // 235
-    "Наука", // 236
-    "Разное", // 237
-    "Поп музыка", // 238
-    "Рок Музыка", // 239
-    "Лёгкая музыка", // 240
-    "Легкая классика", // 241
-    "Классика", // 242
-    "Другая музыка", // 243
-    "Погода", // 244
-    "Финансы", // 245
-    "Детские программы", // 246
-    "Общество", // 247
-    "Религия", // 248
-    "Открытая линия", // 249
-    "Туризм", // 250
-    "Досуг", // 251
-    "Джаз", // 252
-    "Музыка кантри", // 253
-    "Национальная музыка", // 254
-    "Музыка ретро", // 255
-    "Народная музыка", // 256
-    "Документалистика", // 257
-    "Внимание тест", // 258
-    "Тревога!", // 259
+    "5 сек. нажатие Band", // 224
+    "Отключить тюнер", // 225
+    "Отключить экран", // 226
+    "Выключить всё", // 227
+    "00 Не определено", // 228
+    "01 Новости", // 229
+    "02 Аналитика", // 230
+    "03 Информация", // 231
+    "04 Спорт", // 232
+    "05 Образование", // 233
+    "06 Драма", // 234
+    "07 Культура", // 235
+    "08 Наука", // 236
+    "09 Разное", // 237
+    "10 Поп М", // 238
+    "11 Рок М", // 239
+    "12 Лёгкая музыка", // 240
+    "13 Лёгкая классика", // 241
+    "14 Классика", // 242
+    "15 Другая музыка", // 243
+    "16 Погода", // 244
+    "17 Финансы", // 245
+    "18 Детские прогр", // 246
+    "19 Общество", // 247
+    "20 Религия", // 248
+    "21 Открытая линия", // 249
+    "22 Туризм", // 250
+    "23 Досуг", // 251
+    "24 Джаз", // 252
+    "25 Музыка кантри", // 253
+    "26 Национальная М", // 254
+    "27 Олдис", // 255
+    "28 Народная музыка", // 256
+    "29 Документальное", // 257
+    "30 Тревога тест", // 258
+    "31 Тревога!", // 259
     "Начальный", // 260
     "Всегда", // 261
     "Показать часы", // 262
-    "Show long PS", // 263
-    "Start frequency", // 264
-    "Stop frequency", // 265
-    "Start memory channel", // 266
-    "Stop memory channel", // 267
-    "Only store with RDS", // 268
-    "Start auto memory", // 269
-    "Auto memory", // 270
+    "Показывать длинный PS", // 263
+    "Начальная частота", // 264
+    "Конечная частота", // 265
+    "Начальный канал памяти", // 266
+    "Конечный канал памяти", // 267
+    "Сохранять только с RDS", // 268
+    "Начать автозапоминание", // 269
+    "Автозапоминание", // 270
     "Stationlist Идентификатор", // 271
-    "Found", // 272
-    "Abort! Out of memorychannels", // 273
-    "Abort! User pressed button", // 274
-    "Scan finished without errors", // 275
-    "Clear memory channels", // 276
-    "cleared", // 277
-    "Prevent double PI", // 278
-    "Range", // 279
-    "Full", // 280
-    "Wait time on\nsignal only", // 281
-    "Press highlighted corner", // 282
-    "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Найдено", // 272
+    "Прервано! Нехватка памяти", // 273
+    "Прервано! Нажата кнопка", // 274
+    "Сканирование завершено без ошибок", // 275
+    "Очистить каналы памяти", // 276
+    "очищено", // 277
+    "Предотвращать дубль PI", // 278
+    "Диапазон", // 279
+    "Полный", // 280
+    "Время ожидания \nпри сигнале", // 281
+    "Нажмите на подсвеченный угол", // 282
+    "Калибровка тачскрина", // 283
+    "Переключение инверсии экрана", // 284
+    "Выбрать ширину полосы" // 285
   },
 
   { "Українська", // Ukranian
@@ -3735,7 +3746,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Wait time on\nsignal only", // 281
     "Press highlighted corner", // 282
     "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Screen inversion toggles", // 284
+    "Select Bandwidth" // 285
   },
 
   { "Italiano", // Italian
@@ -4022,7 +4034,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Tempo di attesa\nsolo con segnale", // 281
     "Premi l'angolo evidenziato", // 282
     "Per calibrare lo schermo touch", // 283
-    "Inversione colore schermo" // 284
+    "Inversione colore schermo", // 284
+    "Select Bandwidth" // 285
   },
 
   { "Simplified Chinese", // Simplified Chinese
@@ -4309,7 +4322,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Wait time on\nsignal only", // 281
     "Press highlighted corner", // 282
     "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Screen inversion toggles", // 284
+    "Select Bandwidth" // 285
   },
 
   { "Norsk", // Norwegian
@@ -4575,28 +4589,29 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Innledende", // 260
     "Alltid", // 261
     "Vis klokka", // 262
-    "Show long PS", // 263
-    "Start frequency", // 264
-    "Stop frequency", // 265
-    "Start memory channel", // 266
-    "Stop memory channel", // 267
-    "Only store with RDS", // 268
-    "Start auto memory", // 269
-    "Auto memory", // 270
+    "Vis lang PS", // 263
+    "Startfrekvens", // 264
+    "Stoppfrekvens", // 265
+    "Start minne kanal", // 266
+    "Stopp minne kanal", // 267
+    "Lagre kun med RDS", // 268
+    "Start automatisk minne", // 269
+    "Autominne", // 270
     "Stationlist ID", // 271
-    "Found", // 272
-    "Abort! Out of memorychannels", // 273
-    "Abort! User pressed button", // 274
-    "Scan finished without errors", // 275
-    "Clear memory channels", // 276
-    "cleared", // 277
-    "Prevent double PI", // 278
-    "Range", // 279
+    "Funnet", // 272
+    "Avbrutt! Tom for minnekanaler", // 273
+    "Avbrutt! Bruker trykket på knappen", // 274
+    "Skanning fullført uten feil", // 275
+    "Slett minnekanaler", // 276
+    "ryddet", // 277
+    "Forhindre dobbel PI", // 278
+    "Spekter", // 279
     "Full", // 280
-    "Wait time on\nsignal only", // 281
-    "Press highlighted corner", // 282
-    "To calibrate touchscreen", // 283
-    "Screen inversion toggles" // 284
+    "Kun ventetid\npå signal", // 281
+    "Trykk på det uthevede hjørnet", // 282
+    "For å kalibrere berøringsskjerm", // 283
+    "Veksle Skjerminversjon", // 284
+    "Velg Båndbredde" // 285
   },
 
   { "Español", // Spanish
@@ -4883,8 +4898,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Tiempo de espera\ncuando la señal", // 281
     "Presione en el\nángulo resaltado", // 282
     "Para calibrar\nla pantalla táctil", // 283
-    "Cambio de reverso\nde la pantalla" // 284
-
+    "Cambio de reverso\nde la pantalla", // 284
+    "Seleccionar ancho de banda" // 285
   },
 
   { "Português", // Portuguese
@@ -5171,7 +5186,8 @@ static const char* const myLanguage[18][285] PROGMEM = {
     "Espera tempo apenas\nquando sinal", // 281
     "Pressione o\ncanto inscrito", // 282
     "Para calibração\nda tela de toque", // 283
-    "Alternar a inversão da tela" // 284
+    "Alternar a inversão da tela", // 284
+    "Selecione largura de banda" // 285
   }
 };
 #endif

@@ -587,7 +587,6 @@ void ShowOneLine(byte position, byte item, bool selected) {
             case 0: FullLineSprite.drawString(myLanguage[language][30], 298, 2); break;
             case 1: FullLineSprite.drawString(myLanguage[language][200], 298, 2); break;
             case 2: FullLineSprite.drawString(myLanguage[language][201], 298, 2); break;
-            case 3: FullLineSprite.drawString(myLanguage[language][202], 298, 2); break;
           }
           break;
 
@@ -1564,8 +1563,30 @@ void ShowOneLine(byte position, byte item, bool selected) {
   FullLineSprite.pushSprite(8, 2 + position);
 }
 
+void BuildBWSelector() {
+  switch (CurrentTheme) {
+    case 7: tft.pushImage (0, 0, 320, 240, configurationbackground_wo); break;
+    default: tft.pushImage (0, 0, 320, 240, configurationbackground); break;
+  }
+  tftPrint(0, myLanguage[language][285], 160, 6, PrimaryColor, PrimaryColorSmooth, 16);
+
+  if (band < BAND_GAP) {
+    for (int x = 0; x < 16; x++) {
+      drawButton(BWButtonLabelsFM[x], x, (BWset == x + 1 ? true : false));
+    }
+    drawButton(BWButtonLabelsFM[16], 16, (BWset == 0 ? true : false));
+    if (hardwaremodel == PORTABLE_TOUCH_ILI9341) drawButton("OK", 19, false);
+  } else {
+    for (int x = 0; x < 4; x++) {
+      drawButton(BWButtonLabelsAM[x], x, (BWset == x + 1 ? true : false));
+    }
+    if (hardwaremodel == PORTABLE_TOUCH_ILI9341) drawButton("OK", 19, false);
+  }
+}
+
 void BuildMenu() {
   advancedRDS = false;
+  BWtune = false;
 
   switch (CurrentTheme) {
     case 7: tft.pushImage (0, 0, 320, 240, configurationbackground_wo); break;
@@ -1730,6 +1751,7 @@ void BuildAdvancedRDS() {
 void BuildDisplay() {
   afscreen = false;
   advancedRDS = false;
+  BWtune = false;
 
   tft.fillScreen(BackgroundColor);
   tft.drawRect(0, 0, 320, 240, FrameColor);
@@ -2251,6 +2273,7 @@ void MenuUp() {
             OneBigLineSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
             OneBigLineSprite.drawString(Theme[CurrentTheme], 135, 0);
             OneBigLineSprite.pushSprite(24, 118);
+            showMenuOpenTouchButtons();
             break;
 
           case ITEM10:
@@ -2267,13 +2290,12 @@ void MenuUp() {
         switch (menuoption) {
           case ITEM1:
             showrdserrors++;
-            if (showrdserrors > 3) showrdserrors = 0;
+            if (showrdserrors > 2) showrdserrors = 0;
 
             switch (showrdserrors) {
               case 0: OneBigLineSprite.drawString(myLanguage[language][30], 135, 0); break;
               case 1: OneBigLineSprite.drawString(myLanguage[language][200], 135, 0); break;
               case 2: OneBigLineSprite.drawString(myLanguage[language][201], 135, 0); break;
-              case 3: OneBigLineSprite.drawString(myLanguage[language][202], 135, 0); break;
             }
             OneBigLineSprite.pushSprite(24, 118);
             break;
@@ -3198,6 +3220,7 @@ void MenuDown() {
             OneBigLineSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
             OneBigLineSprite.drawString(Theme[CurrentTheme], 135, 0);
             OneBigLineSprite.pushSprite(24, 118);
+            showMenuOpenTouchButtons();
             break;
 
           case ITEM10:
@@ -3214,13 +3237,12 @@ void MenuDown() {
         switch (menuoption) {
           case ITEM1:
             showrdserrors--;
-            if (showrdserrors > 3) showrdserrors = 3;
+            if (showrdserrors > 2) showrdserrors = 2;
 
             switch (showrdserrors) {
               case 0: OneBigLineSprite.drawString(myLanguage[language][30], 135, 0); break;
               case 1: OneBigLineSprite.drawString(myLanguage[language][200], 135, 0); break;
               case 2: OneBigLineSprite.drawString(myLanguage[language][201], 135, 0); break;
-              case 3: OneBigLineSprite.drawString(myLanguage[language][202], 135, 0); break;
             }
             OneBigLineSprite.pushSprite(24, 118);
             break;
@@ -3734,6 +3756,20 @@ void MenuDown() {
   }
 }
 
+void showMenuOpenTouchButtons() {
+  if (hardwaremodel == PORTABLE_TOUCH_ILI9341 && !((menupage == CONNECTIVITY && menuoption == ITEM3) || (menupage == AUTOMEM && (menuoption == ITEM1 || menuoption == ITEM9)) || (menupage == MAINSETTINGS && menuoption == ITEM1))) {
+    tft.fillRoundRect(18, 154, 60, 40, 6, FrameColor);
+    tft.drawRoundRect(18, 154, 60, 40, 6, ActiveColor);
+    tft.fillRoundRect(240, 154, 60, 40, 6, FrameColor);
+    tft.drawRoundRect(240, 154, 60, 40, 6, ActiveColor);
+    tft.fillRoundRect(240, 36, 60, 40, 6, FrameColor);
+    tft.drawRoundRect(240, 36, 60, 40, 6, ActiveColor);
+    tft.fillTriangle(52, 160, 52, 188, 38, 174, ActiveColor);
+    tft.fillTriangle(266, 160, 266, 188, 280, 174, ActiveColor);
+    tftPrint(0, "OK", 270, 44, ActiveColor, ActiveColorSmooth, 28);
+  }
+}
+
 void DoMenu() {
   if (!menuopen) {
     if (menupage != INDEX) {
@@ -3742,6 +3778,7 @@ void DoMenu() {
         case 7: tft.pushImage (13, 30, 292, 170, popupbackground_wo); break;
         default: tft.pushImage (13, 30, 292, 170, popupbackground); break;
       }
+      showMenuOpenTouchButtons();
     }
 
     switch (CurrentTheme) {
@@ -4193,7 +4230,6 @@ void DoMenu() {
               case 0: OneBigLineSprite.drawString(myLanguage[language][30], 135, 0); break;
               case 1: OneBigLineSprite.drawString(myLanguage[language][200], 135, 0); break;
               case 2: OneBigLineSprite.drawString(myLanguage[language][201], 135, 0); break;
-              case 3: OneBigLineSprite.drawString(myLanguage[language][202], 135, 0); break;
             }
             OneBigLineSprite.pushSprite(24, 118);
             break;
@@ -4318,12 +4354,12 @@ void DoMenu() {
 
             OneBigLineSprite.setTextDatum(TL_DATUM);
             OneBigLineSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
-            OneBigLineSprite.drawString("dBμV", 155, 0);
+            OneBigLineSprite.drawString("dB", 155, 0);
             OneBigLineSprite.setTextDatum(TR_DATUM);
             OneBigLineSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
             OneBigLineSprite.drawString((LevelOffset > 0 ? "+" : "") + String(LevelOffset, DEC), 135, 0);
             OneBigLineSprite.pushSprite(24, 118);
-            tftPrint(-1, "dBμV", 190, 165, ActiveColor, ActiveColorSmooth, 28);
+            tftPrint(-1, "dBμV", 179, 165, ActiveColor, ActiveColorSmooth, 28);
             SStatusold = 2000;
             change = true;
             break;
@@ -4807,4 +4843,30 @@ String removeNewline(String inputString) {
     }
   }
   return outputString;
+}
+
+void drawButton(const char* text, byte button_number, bool active) {
+  const int buttonWidth = 70;
+  const int buttonHeight = 30;
+  const int cornerRadius = 6;
+  const int spacingX = 10;
+  const int spacingY = 10;
+  const int numColumns = 4;
+  const int numRows = 5;
+
+  const int startX = 6;
+  const int startY = 35;
+
+  if (button_number >= numColumns * numRows) return;
+
+  int row = button_number / numColumns;
+  int col = button_number % numColumns;
+
+  int x = startX + col * (buttonWidth + spacingX);
+  int y = startY + row * (buttonHeight + spacingY);
+
+  tft.fillRoundRect(x, y, buttonWidth, buttonHeight, cornerRadius, (active ? InsignificantColor : FrameColor));
+  tft.drawRoundRect(x, y, buttonWidth, buttonHeight, cornerRadius, ActiveColor);
+
+  tftPrint(0, text, x + buttonWidth / 2, y + buttonHeight / 4, (active ? FrameColor : PrimaryColor), (active ? InsignificantColor : PrimaryColorSmooth), 16);
 }

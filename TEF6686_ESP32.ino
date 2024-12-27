@@ -6,7 +6,6 @@
 #include <Wire.h>
 #include <math.h>
 #include <TimeLib.h>
-#include <ESP32Time.h>              // https://github.com/fbiego/ESP32Time/archive/refs/heads/main.zip
 #include <TFT_eSPI.h>               // https://github.com/ohmytime/TFT_eSPI_DynamicSpeed/archive/refs/heads/master.zip (please then edit the User_Setup.h as described in the Wiki)
 #include <Hash.h>                   // https://github.com/bbx10/Hash_tng/archive/refs/heads/master.zip
 #include "src/WiFiConnect.h"
@@ -106,6 +105,7 @@ bool RDSSPYUSB;
 bool RDSstatus;
 bool RDSstatusold;
 bool rdsstereoold;
+bool rotaryaccelerate = true;
 bool rtcset;
 bool scandxmode;
 bool scanholdflag;
@@ -157,6 +157,7 @@ byte batteryoptions;
 byte BWset;
 byte BWsetAM;
 byte BWsetFM;
+byte BWsetRecall;
 byte charwidth = 8;
 byte hardwaremodel;
 byte ContrastSet;
@@ -250,6 +251,7 @@ int ForceMono;
 int FrameColor;
 int FreqColor;
 int FreqColorSmooth;
+int freq_in = 0;
 int freqold;
 int GreyoutColor;
 int InsignificantColor;
@@ -274,6 +276,8 @@ int StereoColor;
 int StereoColorSmooth;
 int SquelchShow;
 int rotary;
+int rotarycounter;
+int rotarycounteraccelerator;
 int rssi;
 int rssiold = 200;
 int scanner_filter;
@@ -398,6 +402,7 @@ unsigned long autosquelchtimer;
 unsigned long eonticker;
 unsigned long eontickerhold;
 unsigned long flashingtimer;
+unsigned long keypadtimer;
 unsigned long lowsignaltimer;
 unsigned long ModulationpreviousMillis;
 unsigned long ModulationpeakPreviousMillis;
@@ -408,6 +413,7 @@ unsigned long rtplusticker;
 unsigned long rtplustickerhold;
 unsigned long rtticker;
 unsigned long rttickerhold;
+unsigned long rotarytimer;
 unsigned long scantimer;
 unsigned long signalstatustimer;
 unsigned long tottimer;
@@ -780,6 +786,7 @@ void setup() {
   }
 
   tft.setTouch(TouchCalData);
+
   tft.fillScreen(BackgroundColor);
   tftPrint(0, myLanguage[language][8], 160, 3, PrimaryColor, PrimaryColorSmooth, 28);
   tftPrint(0, "Software " + String(VERSION), 160, 152, PrimaryColor, PrimaryColorSmooth, 16);
@@ -927,6 +934,11 @@ void loop() {
     if (millis() >= tottimer + totprobe) deepSleep();
   }
 
+  if (freq_in != 0 && millis() >= keypadtimer + 2000) {
+    freq_in = 0;
+    ShowFreq(0);
+  }
+
   if (scandxmode) {
     unsigned long waitTime = (scanhold == 0) ? 500 : (scanhold * 1000);
     if (!scanholdflag) scanholdflag = (USN < fmscansens * 30) && (WAM < 230) && (OStatus < 80) && (OStatus > -80);
@@ -1004,19 +1016,16 @@ void loop() {
     }
   }
 
-  if (millis() >= tuningtimer + 200) {
+  if (millis() >= tuningtimer + 200) rdsflagreset = false;
+
+  if (millis() >= tuningtimer + 2000) {
     if (store) {
-      detachInterrupt(digitalPinToInterrupt(ROTARY_PIN_A));
-      detachInterrupt(digitalPinToInterrupt(ROTARY_PIN_B));
       StoreFrequency();
       store = false;
-      attachInterrupt(digitalPinToInterrupt(ROTARY_PIN_A), read_encoder, CHANGE);
-      attachInterrupt(digitalPinToInterrupt(ROTARY_PIN_B), read_encoder, CHANGE);
     }
-    rdsflagreset = false;
   }
 
-  if (!menu && !afscreen && !scandxmode) {
+  if (!BWtune && !menu && !afscreen && !scandxmode) {
     if (af != 0 && dropout && millis() >= aftimer + 1000) {
       aftimer = millis();
       if (radio.af_counter == 0) {
@@ -1058,6 +1067,7 @@ void loop() {
             if (advancedRDS) {
               leave = true;
               BuildAdvancedRDS();
+              freq_in = 0;
             } else {
               ShowFreq(0);
             }
@@ -1133,7 +1143,7 @@ void loop() {
 
   if (seek) Seek(direction);
 
-  if ((SStatus / 10 > LowLevelSet) && !LowLevelInit && !menu && band < BAND_GAP) {
+  if ((SStatus / 10 > LowLevelSet) && !LowLevelInit && !BWtune && !menu && band < BAND_GAP) {
     if (!screenmute && !advancedRDS && !afscreen) {
       if (showmodulation) {
         tftPrint(-1, "10", 27, 144, ActiveColor, ActiveColorSmooth, 16);
@@ -1164,7 +1174,7 @@ void loop() {
   }
 
   if ((SStatus / 10 <= LowLevelSet) && band < BAND_GAP) {
-    if (LowLevelInit && !menu) {
+    if (LowLevelInit && !BWtune && !menu) {
       if (!screenmute && !afscreen && !advancedRDS) {
         for (byte segments = 0; segments < 94; segments++) {
           if (segments > 54) {
@@ -1196,7 +1206,7 @@ void loop() {
       LowLevelInit = false;
     }
 
-    if (!menu && (screenmute || radio.rds.correctPI != 0)) readRds();
+    if (!BWtune && !menu && (screenmute || radio.rds.correctPI != 0)) readRds();
     if (millis() >= lowsignaltimer + 300) {
       lowsignaltimer = millis();
       if (af || (!screenmute || (screenmute && (XDRGTKTCP || XDRGTKUSB)))) {
@@ -1206,7 +1216,7 @@ void loop() {
           radio.getStatusAM(SStatus, USN, WAM, OStatus, BW, MStatus, CN);
         }
       }
-      if (!menu) {
+      if (!BWtune && !menu) {
         doSquelch();
         GetData();
       }
@@ -1220,7 +1230,7 @@ void loop() {
         radio.getStatusAM(SStatus, USN, WAM, OStatus, BW, MStatus, CN);
       }
     }
-    if (!menu) {
+    if (!BWtune && !menu) {
       doSquelch();
       if (millis() >= tuningtimer + 200) readRds();
       GetData();
@@ -1263,7 +1273,11 @@ void loop() {
       }
     } else {
       if (BWtune) doBWtuneUp(); else KeyUp();
-      if (screensaverset && !menu && !screensavertriggered) ScreensaverTimerRestart();
+      if (rotaryaccelerate && rotarycounter > 2 && !BWtune && !menu) {
+        for (int i = 0; i < rotarycounteraccelerator; i++) KeyUp();
+        rotarycounter = 0;
+      }
+      if (screensaverset && !BWtune && !menu && !screensavertriggered) ScreensaverTimerRestart();
     }
   }
 
@@ -1278,7 +1292,11 @@ void loop() {
       }
     } else {
       if (BWtune) doBWtuneDown(); else KeyDown();
-      if (screensaverset && !menu && !screensavertriggered) ScreensaverTimerRestart();
+      if (rotaryaccelerate && rotarycounter > 2 && !BWtune && !menu) {
+        for (int i = 0; i < rotarycounteraccelerator; i++) KeyDown();
+        rotarycounter = 0;
+      }
+      if (screensaverset && !BWtune && !menu && !screensavertriggered) ScreensaverTimerRestart();
     }
   }
 
@@ -1312,8 +1330,6 @@ void loop() {
     }
   }
 
-  if (digitalRead(BWBUTTON) == HIGH && BWtune) BWtune = false;
-
   if (digitalRead(BWBUTTON) == LOW && !BWtune) {
     tottimer = millis();
     if (screensavertriggered) {
@@ -1329,7 +1345,7 @@ void loop() {
     num = GetNum();
     if (num != -1)
     {
-      if (!screenmute && !menu && !advancedRDS && !afscreen)
+      if (!screenmute && !BWtune && !menu && !advancedRDS && !afscreen)
       {
         NumpadProcess(num);
       }
@@ -1340,7 +1356,7 @@ void loop() {
     if (screensaver_IRQ)
     {
       screensaver_IRQ = OFF;
-      if (!screensavertriggered && !menu) {
+      if (!screensavertriggered && !BWtune && !menu) {
         WakeToSleep(true);
       }
     }
@@ -1353,9 +1369,9 @@ void GetData() {
     ShowSignalLevel();
   }
 
-  if (!menu) showPS();
+  if (!BWtune && !menu) showPS();
 
-  if (band < BAND_GAP && !menu) {
+  if (band < BAND_GAP && !BWtune && !menu) {
     if (advancedRDS && !afscreen && !screenmute) ShowAdvancedRDS();
     if (afscreen && !screenmute) ShowAFEON();
     if (!afscreen) {
@@ -1844,16 +1860,18 @@ void BANDBUTTONPress() {
       if (!usesquelch) radio.setUnMute();
       unsigned long counterold = millis();
       unsigned long counter = millis();
-      if (!menu) {
+      if (!BWtune && !menu) {
         while (digitalRead(BANDBUTTON) == LOW && counter - counterold <= 1000) counter = millis();
 
         if (counter - counterold < 1000) {
           if (afscreen) {
             leave = true;
             BuildAdvancedRDS();
+            freq_in = 0;
           } else if (advancedRDS) {
             leave = true;
             BuildDisplay();
+            freq_in = 0;
             SelectBand();
             ScreensaverTimerReopen();
           } else {
@@ -1861,8 +1879,13 @@ void BANDBUTTONPress() {
           }
         } else {
           if (band < BAND_GAP) {
-            if (advancedRDS && !seek) BuildAFScreen();
-            else BuildAdvancedRDS();
+            if (advancedRDS && !seek) {
+              BuildAFScreen();
+              freq_in = 0;
+            } else {
+              BuildAdvancedRDS();
+              freq_in = 0;
+            }
           } else {
             WakeToSleep(true);
           }
@@ -2277,7 +2300,10 @@ void ToggleSWMIBand(bool frequencyup) {
 }
 
 void SelectBand() {
-  if (afscreen || advancedRDS) BuildDisplay();
+  if (afscreen || advancedRDS) {
+    BuildDisplay();
+    freq_in = 0;
+  }
 
   if (band > BAND_GAP) {
     if (!screenmute) tft.drawBitmap(92, 4, Speaker, 26, 22, GreyoutColor);
@@ -2399,7 +2425,7 @@ void BWButtonPress() {
     cancelDXScan();
   } else {
     if (!usesquelch) radio.setUnMute();
-    if (!menu) {
+    if (!BWtune && !menu) {
       if (!screenmute) tft.drawBitmap(92, 4, Speaker, 26, 22, GreyoutColor);
       unsigned long counterold = millis();
       unsigned long counter = millis();
@@ -2409,13 +2435,13 @@ void BWButtonPress() {
         if (band == BAND_FM || band == BAND_OIRT) {
           doStereoToggle();
         } else {
-          BWset++;
-          doBW();
+          BuildBWSelector();
+          freq_in = 0;
           BWtune = true;
         }
       } else {
-        BWset++;
-        doBW();
+        BuildBWSelector();
+        freq_in = 0;
         BWtune = true;
       }
       delay(100);
@@ -2461,13 +2487,15 @@ void ModeButtonPress() {
     if (!usesquelch) radio.setUnMute();
     if (advancedRDS) {
       BuildDisplay();
+      freq_in = 0;
       SelectBand();
       ScreensaverTimerReopen();
     } else if (afscreen) {
       if (afpagenr == 1) afpagenr = 2; else if (afpagenr == 2 && afpage) afpagenr = 3; else afpagenr = 1;
       BuildAFScreen();
+      freq_in = 0;
     } else {
-      if (!menu) {
+      if (!BWtune && !menu) {
         if (!screenmute) {
           tft.drawBitmap(92, 4, Speaker, 26, 22, GreyoutColor);
         }
@@ -2479,12 +2507,13 @@ void ModeButtonPress() {
         if (counter - counterold <= 1000) {
           doTuneMode();
         } else {
-          if (!menu) {
+          if (!BWtune && !menu) {
             menuoption = ITEM1;
             menupage = INDEX;
             menuitem = 0;
             if (spispeed == 7) tft.setSPISpeed(40);
             BuildMenu();
+            freq_in = 0;
             menu = true;
             ScreensaverTimerSet(OFF);
           }
@@ -2530,6 +2559,7 @@ void ModeButtonPress() {
             menupage = INDEX;
             menuitem = 0;
             BuildMenu();
+            freq_in = 0;
           }
         }
       }
@@ -2645,9 +2675,10 @@ void ButtonPress() {
     if (!usesquelch) radio.setUnMute();
     if (advancedRDS) {
       BuildDisplay();
+      freq_in = 0;
       SelectBand();
     }
-    if (!menu) {
+    if (!BWtune && !menu) {
       if (tunemode == TUNE_MEM) {
         if (!memorystore) {
           memorystore = true;
@@ -2746,7 +2777,12 @@ void ButtonPress() {
         ScreensaverTimerRestart();
       }
     } else {
-      DoMenu();
+      if (menu) DoMenu();
+      if (BWtune) {
+        BuildDisplay();
+        freq_in = 0;
+        SelectBand();
+      }
     }
   }
   while (digitalRead(ROTARY_BUTTON) == LOW) delay(50);
@@ -2758,7 +2794,7 @@ void KeyUp() {
     cancelDXScan();
   } else {
     if (!afscreen) {
-      if (!menu) {
+      if (!BWtune && !menu) {
         switch (tunemode) {
           case TUNE_MAN:
             TuneUp();
@@ -2825,7 +2861,7 @@ void KeyDown() {
     cancelDXScan();
   } else {
     if (!afscreen) {
-      if (!menu) {
+      if (!BWtune && !menu) {
         switch (tunemode) {
           case TUNE_MAN:
             TuneDown();
@@ -3040,7 +3076,6 @@ void DoMemoryPosTune() {
 
   BWset = presets[memorypos].bw;
   doBW();
-  BWtune = true;
   memtune = true;
   memreset = true;
   rdsflagreset = false;
@@ -3055,9 +3090,6 @@ void ShowFreq(int mode) {
       if (freqold >= 2000 && frequency_AM < 2000 && stepsize == 0) if (frequency_AM != 144 && freqold != 27000) radio.SetFreqAM(1998);
     }
   }
-
-  detachInterrupt(digitalPinToInterrupt(ROTARY_PIN_A));
-  detachInterrupt(digitalPinToInterrupt(ROTARY_PIN_B));
 
   if (band > BAND_GAP) {
     switch (band) {
@@ -3143,8 +3175,6 @@ void ShowFreq(int mode) {
       }
     }
   }
-  attachInterrupt(digitalPinToInterrupt(ROTARY_PIN_A), read_encoder, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ROTARY_PIN_B), read_encoder, CHANGE);
 
   if (spispeed == 7) setAutoSpeedSPI();
   rdsreset = true;
@@ -3516,7 +3546,7 @@ void doSquelch() {
 
     if (!XDRGTKUSB && !XDRGTKTCP && usesquelch && (!scandxmode || (scandxmode && !scanmute))) {
       if (!screenmute && usesquelch && !advancedRDS && !afscreen) {
-        if (!menu && (Squelch > Squelchold + 2 || Squelch < Squelchold - 2)) {
+        if (!BWtune && !menu && (Squelch > Squelchold + 2 || Squelch < Squelchold - 2)) {
           SquelchSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
           SquelchSprite.fillSprite(BackgroundColor);
           if (Squelch == -100) {
@@ -3621,13 +3651,13 @@ void doSquelch() {
 
 void updateBW() {//todo air
   if (BWset == 0) {
-    if (!screenmute && !advancedRDS && !afscreen) {
+    if (!BWtune && !screenmute && !advancedRDS && !afscreen) {
       tft.fillRoundRect(248, 36, 69, 18, 2, SecondaryColor);
       tftPrint(0, "AUTO BW", 282, 38, BackgroundColor, SecondaryColor, 16);
     }
     radio.setFMABandw();
   } else {
-    if (!screenmute && !advancedRDS && !afscreen) {
+    if (!BWtune && !screenmute && !advancedRDS && !afscreen) {
       tft.fillRoundRect(248, 36, 69, 18, 2, GreyoutColor);
       tftPrint(0, "AUTO BW", 282, 38, BackgroundColor, GreyoutColor, 16);
     }
@@ -3781,26 +3811,35 @@ void doBW() {
 
 void doBWtuneDown() {
   rotary = 0;
-  BWset--;
   if (band < BAND_GAP) {
+    if (BWset == 0) drawButton(BWButtonLabelsFM[16], 16, false); else drawButton(BWButtonLabelsFM[BWset - 1], BWset - 1, false);
+    BWset--;
     if (BWset > 16) BWset = 16;
+    if (BWset == 0) drawButton(BWButtonLabelsFM[16], 16, true); else drawButton(BWButtonLabelsFM[BWset - 1], BWset - 1, true);
   } else {
+    drawButton(BWButtonLabelsAM[BWset - 1], BWset - 1, false);
+    BWset--;
     if (BWset == 0) BWset = 4;
+    drawButton(BWButtonLabelsAM[BWset - 1], BWset - 1, true);
   }
+
   doBW();
-  ShowBW();
 }
 
 void doBWtuneUp() {
   rotary = 0;
-  BWset++;
   if (band < BAND_GAP) {
+    if (BWset == 0) drawButton(BWButtonLabelsFM[16], 16, false); else drawButton(BWButtonLabelsFM[BWset - 1], BWset - 1, false);
+    BWset++;
     if (BWset > 16) BWset = 0;
+    if (BWset == 0) drawButton(BWButtonLabelsFM[16], 16, true); else drawButton(BWButtonLabelsFM[BWset - 1], BWset - 1, true);
   } else {
+    drawButton(BWButtonLabelsAM[BWset - 1], BWset - 1, false);
+    BWset++;
     if (BWset > 4) BWset = 1;
+    drawButton(BWButtonLabelsAM[BWset - 1], BWset - 1, true);
   }
   doBW();
-  ShowBW();
 }
 
 void doTuneMode() {
@@ -4024,6 +4063,7 @@ void TuneUp() {
   if (stepsize == 2) temp = 10;
   if (stepsize == 3) temp = 100;
   if (stepsize == 4) temp = 1000;
+  if (rotaryaccelerate && rotarycounter > 2) temp *= 2;
 
   if (band == BAND_FM) {
     frequency += temp;
@@ -4088,6 +4128,7 @@ void TuneUp() {
     radio.SetFreqAM(frequency_AM);
     frequency_MW = frequency_AM;
   } else if (band == BAND_SW) {
+    if (rotaryaccelerate && rotarycounter > 2) temp *= 2;
     frequency_AM += temp;
     if (frequency_AM > SWHighEdgeSet) {
       frequency_AM = SWLowEdgeSet;
@@ -4149,6 +4190,7 @@ void TuneDown() {
   if (stepsize == 2) temp = 10;
   if (stepsize == 3) temp = 100;
   if (stepsize == 4) temp = 1000;
+  if (rotaryaccelerate && rotarycounter > 2) temp *= 2;
 
   if (band == BAND_FM) {
     frequency -= temp;
@@ -4185,6 +4227,7 @@ void TuneDown() {
     radio.SetFreqAM(frequency_AM);
     frequency_MW = frequency_AM;
   } else if (band == BAND_SW) {
+    if (rotaryaccelerate && rotarycounter > 2) temp *= 2;
     frequency_AM -= temp;
     if (frequency_AM < SWLowEdgeSet) {
       frequency_AM = SWHighEdgeSet;
@@ -4287,15 +4330,22 @@ void SetTunerPatch() {
 }
 
 void read_encoder() {
+  if (!digitalRead(ROTARY_PIN_A) || !digitalRead(ROTARY_PIN_B)) {
+    if (millis() - rotarytimer >= 15) { rotarycounteraccelerator = 2; rotarycounter = 0; } // Steady fast
+    if (millis() - rotarytimer >= 30) { rotarycounteraccelerator = 4; rotarycounter = 0; }
+    if (millis() - rotarytimer >= 45) { rotarycounteraccelerator = 6; rotarycounter = 0; } // Quick flicks
+  }
+
   static uint8_t old_AB = 3;
   static int8_t encval = 0;
-  static const int8_t enc_states[]  = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
+  static const int8_t enc_states[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 
   old_AB <<= 2;
 
   if (digitalRead(ROTARY_PIN_A)) old_AB |= 0x02;
   if (digitalRead(ROTARY_PIN_B)) old_AB |= 0x01;
   encval += enc_states[( old_AB & 0x0f )];
+  if (!(255 - old_AB)) encval = 0; // Unstick -2 or 2
 
   if (optenc) {
     if (encval > 4) {
@@ -4308,9 +4358,13 @@ void read_encoder() {
   } else {
     if (encval > 3) {
       if (rotarymode) rotary = -1; else rotary = 1;
+      rotarycounter++;
+      rotarytimer = millis();
       encval = 0;
     } else if (encval < -3) {
       if (rotarymode) rotary = 1; else rotary = -1;
+      rotarycounter++;
+      rotarytimer = millis();
       encval = 0;
     }
   }
@@ -4326,14 +4380,18 @@ void MuteScreen(bool setting) {
     if (band < BAND_GAP) {
       if (afscreen) {
         BuildAFScreen();
+        freq_in = 0;
       } else if (advancedRDS) {
         BuildAdvancedRDS();
+        freq_in = 0;
       } else {
         BuildDisplay();
+        freq_in = 0;
         SelectBand();
       }
     } else {
       BuildDisplay();
+      freq_in = 0;
       SelectBand();
     }
     setupmode = false;
@@ -4725,7 +4783,10 @@ void startFMDXScan() {
   }
 
   if (menu) endMenu();
-  if (afscreen || advancedRDS) BuildDisplay();
+  if (afscreen || advancedRDS) {
+    BuildDisplay();
+    freq_in = 0;
+  }
 
   if (memorypos > scanstop || memorypos < scanstart) memorypos = scanstart;
   scanmodeold = tunemode;
@@ -5067,6 +5128,7 @@ int GetNum(void) {
   Wire.requestFrom(0x20, 2);
 
   if (Wire.available() == 2) {
+    keypadtimer = millis();
     temp = Wire.read() & 0xFF;
     temp |= (Wire.read() & 0xFF) * 256;
     for (int i = 0; i < 16; i++) {
@@ -5096,7 +5158,7 @@ void ShowNum(int val) {
   FrequencySprite.setTextDatum(TR_DATUM);
 
   FrequencySprite.fillSprite(BackgroundColor);
-  FrequencySprite.setTextColor(FreqColor, FreqColorSmooth, false);
+  FrequencySprite.setTextColor(SecondaryColor, SecondaryColorSmooth, false);
   FrequencySprite.drawString(String(val) + " ", 218, -6);
   FrequencySprite.pushSprite(46, 46);
 
@@ -5158,14 +5220,19 @@ void TuneFreq(int temp) {
 }
 
 void NumpadProcess(int num) {
-  static bool input_mode = false;
-  static int freq_in = 0;
-
-  if (scandxmode) {
+    if (scandxmode) {
     if (num == 127) cancelDXScan();
   } else {
     if (num == 127) {
-      startFMDXScan();
+      freq_in = 0;
+      menuoption = ITEM1;
+      menupage = DXMODE;
+      menuitem = 0;
+      if (spispeed == 7) tft.setSPISpeed(40);
+      submenu = true;
+      menu = true;
+      BuildMenu();
+      ScreensaverTimerSet(OFF);
     } else if (num == 13) {
       if (freq_in != 0) {
         TuneFreq(freq_in);
@@ -5178,6 +5245,8 @@ void NumpadProcess(int num) {
           ShowFreq(0);
           store = true;
         }
+      } else {
+        ShowFreq(0);
       }
       freq_in = 0;
     } else {
