@@ -47,12 +47,8 @@ time_t getNtpTime() {
   return 0; // return 0 if unable to get the time
 }
 
-void NTPupdate() {
-  if (!wifi) { return; }
+time_t NTPupdate() {
+  if (WiFi.status() != WL_CONNECTED) return 0;
   time_t time = getNtpTime();
-  if (time) {
-    rtc.setTime(time);
-  }
+  if (time) rtc.setTime(time);
 }
-
-

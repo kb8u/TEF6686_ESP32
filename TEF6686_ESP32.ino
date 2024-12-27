@@ -413,6 +413,7 @@ unsigned long signalstatustimer;
 unsigned long tottimer;
 unsigned long tuningtimer;
 unsigned long udptimer;
+time_t lastNTPupdate = 0;
 
 mem presets[EE_PRESETS_CNT];
 TEF6686 radio;
@@ -900,6 +901,10 @@ void setup() {
   }
 
   tottimer = millis();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    lastNTPupdate = NTPupdate();
+  }
 }
 
 void loop() {
@@ -4045,7 +4050,9 @@ void TuneUp() {
             rabbitearspi[i] = 0;
           }
         }
-        NTPupdate();
+        if (rtc.getEpoch() > lastNTPupdate + 3600) {
+          if (NTPupdate()) lastNTPupdate = rtc.getEpoch();
+        }
       }
       frequency = LowEdgeSet * 10;
       if (fmdefaultstepsize == 2 && stepsize == 0 && frequency == 8750) frequency = 8775;

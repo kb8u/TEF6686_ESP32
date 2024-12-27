@@ -18,6 +18,6 @@ extern WiFiUDP Udp;
 extern bool wifi;
 
 void sendNTPpacket(IPAddress &address);
-void NTPupdate();
+time_t NTPupdate();
 time_t getNtpTime();
 #endif
