@@ -123,6 +123,7 @@ extern WiFiClient RemoteClient;
 extern WiFiUDP Udp;
 extern WiFiServer Server;
 extern WiFiConnect wc;
+extern WebServer webserver;
 
 void Communication();
 void XDRGTKRoutine();
@@ -147,5 +148,5 @@ extern void showAutoSquelch(bool mode);
 extern void ShowStepSize();
 extern void startFMDXScan();
 extern void cancelDXScan();
-
+extern void printLogbookCSV();
 #endif

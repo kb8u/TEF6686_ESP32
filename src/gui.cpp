@@ -7,8 +7,6 @@
 #include <EEPROM.h>
 #include <cstring>
 
-byte menuitem;
-byte items[10] = {10, static_cast<byte>(dynamicspi ? 10 : 9), 7, 10, 10, 10, 9, 6, 9, 9};
 extern mem presets[];
 bool setWiFiConnectParam = false;
 
@@ -1557,30 +1555,1104 @@ void ShowOneLine(byte position, byte item, bool selected) {
           FullLineSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
           FullLineSprite.drawString(String(fmscansens), 298, 2);
           break;
+
+        case DXMODE:
+          FullLineSprite.setTextDatum(TL_DATUM);
+          FullLineSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          FullLineSprite.drawString(removeNewline(myLanguage[language][292]), 6, 2);
+          break;
       }
       break;
   }
   FullLineSprite.pushSprite(8, 2 + position);
 }
 
+void ShowOneButton(byte position, byte item, bool selected) {
+  switch (CurrentTheme) {
+    case 7: PSSprite.pushImage (0, 0, 150, 32, touchselback_wo); break;
+    default: PSSprite.pushImage (0, 0, 150, 32, touchselback); break;
+  }
+
+  switch (item) {
+    case 0:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][177])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][108])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+
+          switch (hardwaremodel) {
+            case BASE_ILI9341: PSSprite.drawString(myLanguage[language][109], 75, 15); break;
+            case PORTABLE_ILI9341: PSSprite.drawString(myLanguage[language][110], 75, 15); break;
+            case PORTABLE_TOUCH_ILI9341: PSSprite.drawString(myLanguage[language][111], 75, 15); break;
+          }
+          break;
+
+        case AUDIOSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][20])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("dB", 77, 15);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((VolSet > 0 ? "+" : "") + String(VolSet, DEC), 73, 15);
+          break;
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][39])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(myLanguage[language][0], 75, 15);
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][38])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+
+          switch (showrdserrors) {
+            case 0: PSSprite.drawString(myLanguage[language][30], 75, 15); break;
+            case 1: PSSprite.drawString(myLanguage[language][200], 75, 15); break;
+            case 2: PSSprite.drawString(myLanguage[language][201], 75, 15); break;
+          }
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][21])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("MHz", 77, 15);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.drawString(String(ConverterSet, DEC), 73, 15);
+          break;
+
+        case AMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][44])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((softmuteam ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case CONNECTIVITY:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][50])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((USBmode ? "RDS Spy" : "XDRGTK"), 75, 15);
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][212])), 75, 8);
+          break;
+
+        case AUTOMEM:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][269])), 75, 8);
+          break;
+      }
+      break;
+    case 1:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][178])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][107])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((touchrotating ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case AUDIOSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][45])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((edgebeep ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][29])), 75, 1);
+
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(ContrastSet, DEC), 73, 15);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.drawString("%", 77, 15);
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][46])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (region == REGION_EU) PSSprite.drawString(myLanguage[language][47], 75, 15);
+          if (region == REGION_US) PSSprite.drawString(myLanguage[language][48], 75, 15);
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][22])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("MHz", 77, 15);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.drawString(String(LowEdgeSet / 10 + ConverterSet, DEC) + "." + String(LowEdgeSet % 10 + ConverterSet, DEC), 73, 15);
+          break;
+
+        case AMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][64])), 75, 1);
+
+          if (amnb == 0) {
+            PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+            PSSprite.drawString(myLanguage[language][30], 75, 15);
+          } else {
+            PSSprite.setTextDatum(TR_DATUM);
+            PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+            PSSprite.drawString(String(amnb, DEC), 73, 15);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.setTextDatum(TL_DATUM);
+            PSSprite.drawString("%", 77, 15);
+          }
+          break;
+
+        case CONNECTIVITY:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(wifi ? " IP: " + String(WiFi.localIP().toString()) : myLanguage[language][51])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((wifi ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][209])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(scanstart + 1, DEC), 75, 15);
+          break;
+
+        case AUTOMEM:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][264])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("MHz", 77, 15);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.drawString(String(memstartfreq / 10 + ConverterSet, DEC) + "." + String(memstartfreq % 10 + ConverterSet, DEC), 73, 15);
+          break;
+      }
+      break;
+
+    case 2:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][179])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][75])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (tot == 0) {
+            PSSprite.drawString(myLanguage[language][30], 75, 15);
+          } else {
+            PSSprite.setTextDatum(TR_DATUM);
+            PSSprite.drawString(String(tot), 73, 15);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.setTextDatum(TL_DATUM);
+            PSSprite.drawString(myLanguage[language][80], 77, 15);
+          }
+          break;
+
+        case AUDIOSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][67])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((audiomode ? "MPX" : "Stereo"), 75, 15);
+          break;
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][63])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((showmodulation ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][49])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((radio.underscore ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][23])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("MHz", 77, 15);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(HighEdgeSet / 10 + ConverterSet, DEC) + "." + String(HighEdgeSet % 10 + ConverterSet, DEC), 73, 15);
+          break;
+
+        case AMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][97])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("dB", 77, 15);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.drawString((AMLevelOffset > 0 ? "+" : "") + String(AMLevelOffset, DEC), 73, 15);
+          break;
+
+        case CONNECTIVITY:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][52])), 75, 8);
+
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][210])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(scanstop + 1, DEC), 75, 15);
+          break;
+
+        case AUTOMEM:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][265])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("MHz", 77, 15);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(memstopfreq / 10 + ConverterSet, DEC) + "." + String(memstopfreq % 10 + ConverterSet, DEC), 73, 15);
+          break;
+      }
+      break;
+
+    case 3:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][180])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][62])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (autosquelch) PSSprite.drawString(myLanguage[language][86], 75, 15); else PSSprite.drawString((usesquelch ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case AUDIOSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][25])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (StereoLevel == 0) {
+            PSSprite.drawString(myLanguage[language][30], 75, 15);
+          } else {
+            PSSprite.setTextDatum(TR_DATUM);
+            PSSprite.drawString(String(StereoLevel, DEC), 73, 15);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.setTextDatum(TL_DATUM);
+            PSSprite.drawString("dBμV", 77, 15);
+          }
+          break;
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][91])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (!screensaverset) {
+            PSSprite.drawString(myLanguage[language][30], 75, 15);
+          } else {
+            PSSprite.setTextDatum(TR_DATUM);
+            PSSprite.drawString(String(screensaverOptions[screensaverset], DEC), 73, 15);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.setTextDatum(TL_DATUM);
+            PSSprite.drawString(myLanguage[language][92], 77, 15);
+          }
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][60])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((radio.rds.filter ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][24])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("dB", 77, 15);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((LevelOffset > 0 ? "+" : "") + String(LevelOffset, DEC), 73, 15);
+          break;
+
+        case AMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][59])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((showSWMIBand ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case CONNECTIVITY:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][58])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((wifi ? String(WiFi.localIP()[0]) + "." + String(WiFi.localIP()[1]) + "." + String(WiFi.localIP()[2]) + "." + String(subnetclient, DEC) : "-"), 75, 15);
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][211])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(removeNewline(myLanguage[language][92]), 77, 15);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.drawString((scanhold == 0 ? "0.5" : String(scanhold, DEC)), 73, 15);
+          break;
+
+        case AUTOMEM:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][266])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(memstartpos + 1, DEC), 75, 15);
+          break;
+      }
+      break;
+
+    case 4:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][181])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][37])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("dBµV", 77, 15);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.drawString(String(fmagc, DEC), 73, 15);
+          break;
+
+        case AUDIOSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][26])), 75, 1);
+
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(HighCutLevel * 100, DEC), 73, 15);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.drawString("Hz", 77, 15);
+          break;
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][74])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+
+          switch (poweroptions) {
+            case LCD_OFF: PSSprite.drawString(myLanguage[language][76], 75, 15); break;
+            case LCD_BRIGHTNESS_1_PERCENT: PSSprite.drawString(myLanguage[language][94], 75, 15); break;
+            case LCD_BRIGHTNESS_A_QUARTER: PSSprite.drawString(myLanguage[language][95], 75, 15); break;
+            case LCD_BRIGHTNESS_HALF: PSSprite.drawString(myLanguage[language][96], 75, 15); break;
+          }
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][61])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((radio.rds.pierrors ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][28])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("dBμV", 77, 15);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.drawString(String(LowLevelSet, DEC), 73, 15);
+          break;
+
+        case AMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][185])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (amcodect == 0) {
+            PSSprite.drawString(myLanguage[language][30], 75, 15);
+          } else {
+            PSSprite.setTextDatum(TR_DATUM);
+            PSSprite.drawString(String(amcodect, DEC), 73, 15);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.setTextDatum(TL_DATUM);
+            PSSprite.drawString("%", 77, 15);
+          }
+          break;
+
+        case CONNECTIVITY:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][271])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(stationlistid, DEC), 75, 15);
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][216])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((scanmem ? myLanguage[language][218] : myLanguage[language][217]), 75, 15);
+          break;
+
+        case AUTOMEM:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][267])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(memstoppos + 1, DEC), 75, 15);
+          break;
+      }
+      break;
+
+    case 5:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][182])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][198])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("dBµV", 77, 15);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.drawString(String(amagc, DEC), 73, 15);
+          break;
+
+        case AUDIOSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][27])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (HighCutOffset == 0) {
+            PSSprite.drawString(myLanguage[language][30], 75, 15);
+          } else {
+            PSSprite.setTextDatum(TR_DATUM);
+            PSSprite.drawString(String(HighCutOffset, DEC), 73, 15);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.setTextDatum(TL_DATUM);
+            PSSprite.drawString("dBμV", 77, 15);
+          }
+          break;
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][173])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+
+          switch (batteryoptions) {
+            case BATTERY_NONE: PSSprite.drawString(myLanguage[language][30], 75, 15); break;
+            case BATTERY_VALUE: PSSprite.drawString(myLanguage[language][174], 75, 15); break;
+            case BATTERY_PERCENT: PSSprite.drawString(myLanguage[language][175], 75, 15); break;
+          }
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][99])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+
+          switch (af) {
+            case 0: PSSprite.drawString(myLanguage[language][30], 75, 15); break;
+            case 1: PSSprite.drawString(String(myLanguage[language][42]) + " / REG " + String(myLanguage[language][42]), 75, 15); break;
+            case 2: PSSprite.drawString(String(myLanguage[language][42]) + " / REG " + String(myLanguage[language][30]), 75, 15); break;
+          }
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][43])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((softmutefm ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case AMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][187])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(amcodectcount, DEC), 75, 15);
+          break;
+
+        case CONNECTIVITY:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][205])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((XDRGTKMuteScreen ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][219])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          switch (scancancel) {
+            case OFF: PSSprite.drawString(myLanguage[language][30], 75, 15); break;
+            case CORRECTPI: PSSprite.drawString(myLanguage[language][220], 75, 15); break;
+            case SIGNAL: PSSprite.drawString(myLanguage[language][221], 75, 15); break;
+          }
+          break;
+
+        case AUTOMEM:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][268])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((mempionly ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+      }
+      break;
+
+    case 6:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][183])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][100])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+
+          switch (bandFM) {
+            case FM_BAND_ALL: PSSprite.drawString(myLanguage[language][105] + String(",") + myLanguage[language][106], 75, 15); break;
+            case FM_BAND_OIRT: PSSprite.drawString(myLanguage[language][106], 75, 15); break;
+            case FM_BAND_FM: PSSprite.drawString(myLanguage[language][105], 75, 15); break;
+            case FM_BAND_NONE: PSSprite.drawString(myLanguage[language][83], 75, 15); break;
+          }
+          break;
+
+        case AUDIOSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][199])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (fmdeemphasis == DEEMPHASIS_NONE) {
+            PSSprite.drawString(myLanguage[language][30], 75, 15);
+          } else {
+            PSSprite.setTextDatum(TR_DATUM);
+            PSSprite.drawString(String((fmdeemphasis == DEEMPHASIS_50 ? FM_DEEMPHASIS_50 : FM_DEEMPHASIS_75), DEC), 73, 15);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.setTextDatum(TL_DATUM);
+            PSSprite.drawString("μs", 77, 15);
+          }
+          break;
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][98])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(unitString[unit], 75, 15);
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][176])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((radio.rds.rtbuffer ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][65])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (fmnb == 0) {
+            PSSprite.drawString(myLanguage[language][30], 75, 15);
+          } else {
+            PSSprite.setTextDatum(TL_DATUM);
+            PSSprite.drawString(String(fmnb, DEC), 73, 15);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.setTextDatum(TR_DATUM);
+            PSSprite.drawString("%", 77, 15);
+          }
+          break;
+
+        case AMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][36])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          if (amgain == 0) {
+            PSSprite.drawString(myLanguage[language][30], 75, 15);
+          } else {
+            PSSprite.setTextDatum(TR_DATUM);
+            PSSprite.drawString(String(amgain, DEC), 73, 15);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.setTextDatum(TL_DATUM);
+            PSSprite.drawString("dB", 77, 15);
+          }
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][222])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((scanmute ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case AUTOMEM:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][278])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+
+          switch (memdoublepi) {
+            case MEMPI_OFF: PSSprite.drawString(myLanguage[language][30], 75, 15); break;
+            case MEMPI_RANGE: PSSprite.drawString(myLanguage[language][279], 75, 15); break;
+            default: PSSprite.drawString(myLanguage[language][280], 75, 15); break;
+          }
+          break;
+      }
+      break;
+
+    case 7:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][213])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][101])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+#ifdef HAS_AIR_BAND
+          switch (bandAM) {
+            case AM_BAND_ALL: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][103] + String(",") + myLanguage[language][104] + String(",") + myLanguage[language][223], 75, 15); break;
+            case AM_BAND_LW_MW_SW: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][103] + String(",") + myLanguage[language][104], 75, 15); break;
+            case AM_BAND_LW_MW_AIR: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][103] + String(",") + myLanguage[language][223], 75, 15); break;
+            case AM_BAND_LW_SW_AIR: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][104] + String(",") + myLanguage[language][223], 75, 15); break;
+            case AM_BAND_MW_SW_AIR: PSSprite.drawString(myLanguage[language][103] + String(",") + myLanguage[language][104] + String(",") + myLanguage[language][223], 75, 15); break;
+            case AM_BAND_LW_MW: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][103], 75, 15); break;
+            case AM_BAND_LW_SW: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][104], 75, 15); break;
+            case AM_BAND_LW_AIR: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][223], 75, 15); break;
+            case AM_BAND_MW_SW: PSSprite.drawString(myLanguage[language][103] + String(",") + myLanguage[language][104], 75, 15); break;
+            case AM_BAND_MW_AIR: PSSprite.drawString(myLanguage[language][103] + String(",") + myLanguage[language][223], 75, 15); break;
+            case AM_BAND_SW_AIR: PSSprite.drawString(myLanguage[language][104] + String(",") + myLanguage[language][223], 75, 15); break;
+            case AM_BAND_LW: PSSprite.drawString(myLanguage[language][102], 75, 15); break;
+            case AM_BAND_MW: PSSprite.drawString(myLanguage[language][103], 75, 15); break;
+            case AM_BAND_SW: PSSprite.drawString(myLanguage[language][104], 75, 15); break;
+            case AM_BAND_AIR: PSSprite.drawString(myLanguage[language][223], 75, 15); break;
+            case AM_BAND_NONE: PSSprite.drawString(myLanguage[language][83], 75, 15); break;
+          }
+          break;
+#else
+          switch (bandAM) {
+            case AM_BAND_ALL: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][103] + String(",") + myLanguage[language][104], 75, 15); break;
+            case AM_BAND_LW_MW: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][103], 75, 15); break;
+            case AM_BAND_LW_SW: PSSprite.drawString(myLanguage[language][102] + String(",") + myLanguage[language][104], 75, 15); break;
+            case AM_BAND_MW_SW: PSSprite.drawString(myLanguage[language][103] + String(",") + myLanguage[language][104], 75, 15); break;
+            case AM_BAND_LW: PSSprite.drawString(myLanguage[language][102], 75, 15); break;
+            case AM_BAND_MW: PSSprite.drawString(myLanguage[language][103], 75, 15); break;
+            case AM_BAND_SW: PSSprite.drawString(myLanguage[language][104], 75, 15); break;
+            case AM_BAND_NONE: PSSprite.drawString(myLanguage[language][83], 75, 15); break;
+          }
+          break;
+#endif
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][262])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((showclock ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][215])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((radio.rds.sortaf ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][90])), 75, 1);
+
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString("kHz", 77, 15);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.setTextDatum(TR_DATUM);
+
+          switch (fmdefaultstepsize) {
+            case 0: PSSprite.drawString(String(FREQ_FM_STEP_50K * 10, DEC), 73, 15); break;
+            case 1: PSSprite.drawString(String(FREQ_FM_STEP_100K * 10, DEC), 73, 15); break;
+            case 2: PSSprite.drawString(String(FREQ_FM_STEP_200K * 10, DEC), 73, 15); break;
+          }
+          break;
+
+        case AMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][169])), 75, 1);
+
+          PSSprite.setTextDatum(TR_DATUM);
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((mwstepsize ? "10" : "9"), 73, 15);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.setTextDatum(TL_DATUM);
+          PSSprite.drawString("kHz", 77, 15);
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][82])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(fmscansens), 75, 15);
+          break;
+
+        case AUTOMEM:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][82])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(fmscansens), 75, 15);
+          break;
+      }
+      break;
+
+    case 8:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][270])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][224])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          switch (longbandpress) {
+            case STANDBY: PSSprite.drawString(myLanguage[language][225], 75, 15); break;
+            case SCREENOFF: PSSprite.drawString(myLanguage[language][226], 75, 15); break;
+            default: PSSprite.drawString(myLanguage[language][227], 75, 15); break;
+          }
+          break;
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][77])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(Theme[CurrentTheme], 75, 15);
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][203])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+
+          switch (radio.rds.fastps) {
+            case 0: PSSprite.drawString(myLanguage[language][30], 75, 15); break;
+            case 1: PSSprite.drawString(myLanguage[language][260], 75, 15); break;
+            case 2: PSSprite.drawString(myLanguage[language][261], 75, 15); break;
+          }
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][206])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((fmsi ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case AMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][82])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(amscansens), 75, 15);
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][281])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((scanholdonsignal ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case AUTOMEM:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][276])), 75, 8);
+          break;
+      }
+      break;
+
+    case 9:
+      switch (menupage) {
+        case INDEX:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][70])), 75, 8);
+          break;
+
+        case MAINSETTINGS:
+          if (dynamicspi) {
+            PSSprite.setTextDatum(TC_DATUM);
+            PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+            PSSprite.drawString(shortLine(removeNewline(myLanguage[language][81])), 75, 1);
+
+            if (spispeed == 7) {
+              PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+              PSSprite.drawString(myLanguage[language][86], 75, 15);
+            } else {
+              PSSprite.setTextDatum(TL_DATUM);
+              PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+              PSSprite.drawString("MHz", 77, 15);
+              PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+              PSSprite.setTextDatum(TR_DATUM);
+              PSSprite.drawString((spispeed == SPI_SPEED_DEFAULT ? String(myLanguage[language][204]) + " " + String(SPI_FREQUENCY / 1000000, DEC) : String(spispeed * 10, DEC)), 73, 15);
+            }
+          }
+          break;
+
+        case DISPLAYSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][85])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(FreqFont[freqfont], 75, 15);
+          break;
+
+        case RDSSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][263])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString((showlongps ? myLanguage[language][42] : myLanguage[language][30]), 75, 15);
+          break;
+
+        case FMSETTINGS:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][82])), 75, 1);
+
+          PSSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
+          PSSprite.drawString(String(fmscansens), 75, 15);
+          break;
+
+        case DXMODE:
+          PSSprite.setTextDatum(TC_DATUM);
+          PSSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
+          PSSprite.drawString(shortLine(removeNewline(myLanguage[language][292])), 75, 8);
+          break;
+      }
+      break;
+  }
+  PSSprite.pushSprite((position > ITEM5 ? 163 : 8), (position * 2) - 22 - (position > ITEM5 ? 200 : 0));
+  if (selected) {
+    tft.drawRect((position > ITEM5 ? 163 : 8),
+                 (position * 2) - 22 - (position > ITEM5 ? 200 : 0), 150, 32, PrimaryColor);
+    tft.drawRect((position > ITEM5 ? 164 : 9),
+                 (position * 2) - 21 - (position > ITEM5 ? 200 : 0), 148, 30, PrimaryColor);
+  }
+}
+
 void BuildBWSelector() {
+  BWsettemp = BWset;
   switch (CurrentTheme) {
     case 7: tft.pushImage (0, 0, 320, 240, configurationbackground_wo); break;
     default: tft.pushImage (0, 0, 320, 240, configurationbackground); break;
   }
   tftPrint(0, myLanguage[language][285], 160, 6, PrimaryColor, PrimaryColorSmooth, 16);
+  showBWSelector();
+}
 
+void showBWSelector() {
   if (band < BAND_GAP) {
-    for (int x = 0; x < 16; x++) {
-      drawButton(BWButtonLabelsFM[x], x, (BWset == x + 1 ? true : false));
-    }
-    drawButton(BWButtonLabelsFM[16], 16, (BWset == 0 ? true : false));
-    if (hardwaremodel == PORTABLE_TOUCH_ILI9341) drawButton("OK", 19, false);
+    for (int x = 0; x < 17; x++) drawButton(BWButtonLabelsFM[x], x, (BWset == x + 1 || (BWset == 0 && x == 16) ? true : false), false);
+    drawButton(BWButtonLabelsFM[17], 17, (!iMSset ? true : false), false);
+    drawButton(BWButtonLabelsFM[18], 18, (!EQset ? true : false), false);
+    drawButton("OK", 19, false, false);
   } else {
     for (int x = 0; x < 4; x++) {
-      drawButton(BWButtonLabelsAM[x], x, (BWset == x + 1 ? true : false));
+      drawButton(BWButtonLabelsAM[x], x, (BWset == x + 1 ? true : false), false);
     }
-    if (hardwaremodel == PORTABLE_TOUCH_ILI9341) drawButton("OK", 19, false);
+    drawButton("OK", 19, false, false);
   }
 }
 
@@ -1596,20 +2668,37 @@ void BuildMenu() {
   if (!submenu) {
     tftPrint(0, myLanguage[language][41], 160, 6, PrimaryColor, PrimaryColorSmooth, 16);
   } else {
-    tftPrint(-1, myLanguage[language][184], 8, 6, PrimaryColor, PrimaryColorSmooth, 16);
+    tftPrint(-1, myLanguage[language][184], (hardwaremodel == PORTABLE_TOUCH_ILI9341 ? 20 : 8), 6, PrimaryColor, PrimaryColorSmooth, 16);
     tftPrint(1, myLanguage[language][189 + menupage - 1], 312, 6, ActiveColor, ActiveColorSmooth, 16);
   }
 
-  ShowOneLine(ITEM1, 0, (menuoption == ITEM1 ? true : false));
-  ShowOneLine(ITEM2, 1, (menuoption == ITEM2 ? true : false));
-  ShowOneLine(ITEM3, 2, (menuoption == ITEM3 ? true : false));
-  ShowOneLine(ITEM4, 3, (menuoption == ITEM4 ? true : false));
-  ShowOneLine(ITEM5, 4, (menuoption == ITEM5 ? true : false));
-  ShowOneLine(ITEM6, 5, (menuoption == ITEM6 ? true : false));
-  ShowOneLine(ITEM7, 6, (menuoption == ITEM7 ? true : false));
-  ShowOneLine(ITEM8, 7, (menuoption == ITEM8 ? true : false));
-  ShowOneLine(ITEM9, 8, (menuoption == ITEM9 ? true : false));
-  ShowOneLine(ITEM10, 9, (menuoption == ITEM10 ? true : false));
+  if (hardwaremodel == PORTABLE_TOUCH_ILI9341) {
+    tft.fillRoundRect(4, 4, 15, 20, 3, FrameColor);
+    tft.drawRoundRect(4, 4, 15, 20, 3, ActiveColor);
+    tft.fillTriangle(12, 8, 8, 14, 12, 20, (CurrentTheme == 7 ? White : ActiveColor));
+
+    if (items[menupage] > 0) ShowOneButton(ITEM1, 0, false);
+    if (items[menupage] > 1) ShowOneButton(ITEM2, 1, false);
+    if (items[menupage] > 2) ShowOneButton(ITEM3, 2, false);
+    if (items[menupage] > 3) ShowOneButton(ITEM4, 3, false);
+    if (items[menupage] > 4) ShowOneButton(ITEM5, 4, false);
+    if (items[menupage] > 5) ShowOneButton(ITEM6, 5, false);
+    if (items[menupage] > 6) ShowOneButton(ITEM7, 6, false);
+    if (items[menupage] > 7) ShowOneButton(ITEM8, 7, false);
+    if (items[menupage] > 8) ShowOneButton(ITEM9, 8, false);
+    if (items[menupage] > 9) ShowOneButton(ITEM10, 9, false);
+  } else {
+    ShowOneLine(ITEM1, 0, (menuoption == ITEM1 ? true : false));
+    ShowOneLine(ITEM2, 1, (menuoption == ITEM2 ? true : false));
+    ShowOneLine(ITEM3, 2, (menuoption == ITEM3 ? true : false));
+    ShowOneLine(ITEM4, 3, (menuoption == ITEM4 ? true : false));
+    ShowOneLine(ITEM5, 4, (menuoption == ITEM5 ? true : false));
+    ShowOneLine(ITEM6, 5, (menuoption == ITEM6 ? true : false));
+    ShowOneLine(ITEM7, 6, (menuoption == ITEM7 ? true : false));
+    ShowOneLine(ITEM8, 7, (menuoption == ITEM8 ? true : false));
+    ShowOneLine(ITEM9, 8, (menuoption == ITEM9 ? true : false));
+    ShowOneLine(ITEM10, 9, (menuoption == ITEM10 ? true : false));
+  }
 
   analogWrite(SMETERPIN, 0);
 }
@@ -1766,9 +2855,9 @@ void BuildDisplay() {
   tft.drawLine(53, 30, 53, 0, FrameColor);
   tft.drawLine(89, 30, 89, 0, FrameColor);
   tft.drawLine(158, 30, 158, 0, FrameColor);
-  tft.drawLine(20, 114, 204, 114, Darkgrey);
+  tft.drawLine(16, 114, 202, 114, ActiveColor);
 
-  if (!showmodulation) tft.drawLine(20, 143, 204, 143, GreyoutColor); else tft.drawLine(20, 143, 204, 143, Darkgrey);
+  if (!showmodulation) tft.drawLine(16, 143, 202, 143, GreyoutColor); else tft.drawLine(16, 143, 202, 143, ActiveColor);
   for (byte segments = 0; segments < 94; segments++) {
     if (segments > 54) {
       if (((segments - 53) % 10) == 0) {
@@ -1867,7 +2956,7 @@ void BuildDisplay() {
 
 void MenuUp() {
   if (!menuopen) {
-    ShowOneLine(menuoption, menuitem, false);
+    if (hardwaremodel == PORTABLE_TOUCH_ILI9341) ShowOneButton(menuoption, menuitem, false); else ShowOneLine(menuoption, menuitem, false);
 
     if (hardwaremodel == BASE_ILI9341) {
       menuoption += ITEM_GAP;
@@ -1889,7 +2978,7 @@ void MenuUp() {
       }
     }
 
-    ShowOneLine(menuoption, menuitem, true);
+    if (hardwaremodel == PORTABLE_TOUCH_ILI9341) ShowOneButton(menuoption, menuitem, true); else ShowOneLine(menuoption, menuitem, true);
   } else {
     switch (CurrentTheme) {
       case 7: OneBigLineSprite.pushImage(-11, -88, 292, 170, popupbackground_wo); break;
@@ -2266,9 +3355,19 @@ void MenuUp() {
             CurrentTheme ++;
             if (CurrentTheme > sizeof(Theme) / sizeof(Theme[0]) - 1) CurrentTheme = 0;
             doTheme();
-            OneBigLineSprite.fillSprite(BackgroundColor);
+            switch (CurrentTheme) {
+              case 7:
+                OneBigLineSprite.pushImage(-11, -88, 292, 170, popupbackground_wo);
+                tft.pushImage (13, 30, 292, 170, popupbackground_wo);
+                break;
+              default:
+                OneBigLineSprite.pushImage(-11, -88, 292, 170, popupbackground);
+                tft.pushImage (13, 30, 292, 170, popupbackground);
+                break;
+            }
+
+            showMenuOpenTouchButtons();
             tft.drawRoundRect(10, 30, 300, 170, 5, ActiveColor);
-            tft.fillRoundRect(12, 32, 296, 166, 5, BackgroundColor);
             Infoboxprint(myLanguage[language][77]);
             OneBigLineSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
             OneBigLineSprite.drawString(Theme[CurrentTheme], 135, 0);
@@ -2434,7 +3533,7 @@ void MenuUp() {
 
             OneBigLineSprite.setTextDatum(TL_DATUM);
             OneBigLineSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
-            OneBigLineSprite.drawString("dBμV", 155, 0);
+            OneBigLineSprite.drawString("dB", 155, 0);
             OneBigLineSprite.setTextDatum(TR_DATUM);
             OneBigLineSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
             OneBigLineSprite.drawString((LevelOffset > 0 ? "+" : "") + String(LevelOffset, DEC), 135, 0);
@@ -2810,7 +3909,7 @@ void MenuUp() {
 
 void MenuDown() {
   if (!menuopen) {
-    ShowOneLine(menuoption, menuitem, false);
+    if (hardwaremodel == PORTABLE_TOUCH_ILI9341) ShowOneButton(menuoption, menuitem, false); else ShowOneLine(menuoption, menuitem, false);
 
     if (hardwaremodel == BASE_ILI9341) {
       menuoption -= ITEM_GAP;
@@ -2832,7 +3931,7 @@ void MenuDown() {
       }
     }
 
-    ShowOneLine(menuoption, menuitem, true);
+    if (hardwaremodel == PORTABLE_TOUCH_ILI9341) ShowOneButton(menuoption, menuitem, true); else ShowOneLine(menuoption, menuitem, true);
   } else {
     switch (CurrentTheme) {
       case 7: OneBigLineSprite.pushImage(-11, -88, 292, 170, popupbackground_wo); break;
@@ -3213,9 +4312,19 @@ void MenuDown() {
             if (CurrentTheme > sizeof(Theme) / sizeof(Theme[0]) - 1) CurrentTheme = sizeof(Theme) / sizeof(Theme[0]) - 1;
 
             doTheme();
-            OneBigLineSprite.fillSprite(BackgroundColor);
+            switch (CurrentTheme) {
+              case 7:
+                OneBigLineSprite.pushImage(-11, -88, 292, 170, popupbackground_wo);
+                tft.pushImage (13, 30, 292, 170, popupbackground_wo);
+                break;
+              default:
+                OneBigLineSprite.pushImage(-11, -88, 292, 170, popupbackground);
+                tft.pushImage (13, 30, 292, 170, popupbackground);
+                break;
+            }
+
+            showMenuOpenTouchButtons();
             tft.drawRoundRect(10, 30, 300, 170, 5, ActiveColor);
-            tft.fillRoundRect(12, 32, 296, 166, 5, BackgroundColor);
             Infoboxprint(myLanguage[language][77]);
             OneBigLineSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
             OneBigLineSprite.drawString(Theme[CurrentTheme], 135, 0);
@@ -3381,7 +4490,7 @@ void MenuDown() {
 
             OneBigLineSprite.setTextDatum(TL_DATUM);
             OneBigLineSprite.setTextColor(ActiveColor, ActiveColorSmooth, false);
-            OneBigLineSprite.drawString("dBμV", 155, 0);
+            OneBigLineSprite.drawString("dB", 155, 0);
             OneBigLineSprite.setTextDatum(TR_DATUM);
             OneBigLineSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
             OneBigLineSprite.drawString((LevelOffset > 0 ? "+" : "") + String(LevelOffset, DEC), 135, 0);
@@ -3757,16 +4866,22 @@ void MenuDown() {
 }
 
 void showMenuOpenTouchButtons() {
-  if (hardwaremodel == PORTABLE_TOUCH_ILI9341 && !((menupage == CONNECTIVITY && menuoption == ITEM3) || (menupage == AUTOMEM && (menuoption == ITEM1 || menuoption == ITEM9)) || (menupage == MAINSETTINGS && menuoption == ITEM1))) {
+  if (hardwaremodel == PORTABLE_TOUCH_ILI9341 && !((menupage == CONNECTIVITY && menuoption == ITEM3) || (menupage == AUTOMEM && (menuoption == ITEM1 || menuoption == ITEM9)) || (menupage == MAINSETTINGS && menuoption == ITEM1) || (menupage == DXMODE && menuoption == ITEM10))) {
     tft.fillRoundRect(18, 154, 60, 40, 6, FrameColor);
     tft.drawRoundRect(18, 154, 60, 40, 6, ActiveColor);
     tft.fillRoundRect(240, 154, 60, 40, 6, FrameColor);
     tft.drawRoundRect(240, 154, 60, 40, 6, ActiveColor);
-    tft.fillRoundRect(240, 36, 60, 40, 6, FrameColor);
-    tft.drawRoundRect(240, 36, 60, 40, 6, ActiveColor);
-    tft.fillTriangle(52, 160, 52, 188, 38, 174, ActiveColor);
-    tft.fillTriangle(266, 160, 266, 188, 280, 174, ActiveColor);
-    tftPrint(0, "OK", 270, 44, ActiveColor, ActiveColorSmooth, 28);
+    tft.fillTriangle(52, 160, 52, 188, 38, 174, (CurrentTheme == 7 ? White : ActiveColor));
+    tft.fillTriangle(266, 160, 266, 188, 280, 174, (CurrentTheme == 7 ? White : ActiveColor));
+    if (!submenu && menuoption == ITEM9) {
+      tft.fillRoundRect(240, 36, 60, 40, 6, FrameColor);
+      tft.drawRoundRect(240, 36, 60, 40, 6, ActiveColor);
+      tftPrint(0, "OK", 270, 44, (CurrentTheme == 7 ? White : ActiveColor), ActiveColorSmooth, 28);
+    } else {
+      tft.fillRoundRect(130, 154, 60, 40, 6, FrameColor);
+      tft.drawRoundRect(130, 154, 60, 40, 6, ActiveColor);
+      tftPrint(0, "OK", 160, 162, (CurrentTheme == 7 ? White : ActiveColor), ActiveColorSmooth, 28);
+    }
   }
 }
 
@@ -3779,6 +4894,14 @@ void DoMenu() {
         default: tft.pushImage (13, 30, 292, 170, popupbackground); break;
       }
       showMenuOpenTouchButtons();
+
+      if (menupage == CONNECTIVITY && menuoption == ITEM3) {
+        switch (CurrentTheme) {
+          case 7: tft.pushImage (0, 0, 320, 240, configurationbackground_wo); break;
+          default: tft.pushImage (0, 0, 320, 240, configurationbackground); break;
+        }
+        tftPrint(0, myLanguage[language][189 + menupage - 1], 160, 6, ActiveColor, ActiveColorSmooth, 16);
+      }
     }
 
     switch (CurrentTheme) {
@@ -3889,6 +5012,11 @@ void DoMenu() {
             tftPrint(-1, "lawendel", 155, 185, PrimaryColor, PrimaryColorSmooth, 16);
             tftPrint(1, "KB8U", 145, 200, PrimaryColor, PrimaryColorSmooth, 16);
             tftPrint(0, "github.com/PE5PVB/TEF6686_ESP32", 155, 215, ActiveColor, ActiveColorSmooth, 16);
+            if (hardwaremodel == PORTABLE_TOUCH_ILI9341) {
+              tft.fillRoundRect(240, 36, 60, 40, 6, FrameColor);
+              tft.drawRoundRect(240, 36, 60, 40, 6, ActiveColor);
+              tftPrint(0, "OK", 270, 44, (CurrentTheme == 7 ? White : ActiveColor), ActiveColorSmooth, 28);
+            }
             break;
         }
         break;
@@ -4359,9 +5487,6 @@ void DoMenu() {
             OneBigLineSprite.setTextColor(PrimaryColor, PrimaryColorSmooth, false);
             OneBigLineSprite.drawString((LevelOffset > 0 ? "+" : "") + String(LevelOffset, DEC), 135, 0);
             OneBigLineSprite.pushSprite(24, 118);
-            tftPrint(-1, "dBμV", 179, 165, ActiveColor, ActiveColorSmooth, 28);
-            SStatusold = 2000;
-            change = true;
             break;
 
           case ITEM5:
@@ -4686,6 +5811,18 @@ void DoMenu() {
             OneBigLineSprite.drawString((scanholdonsignal ? myLanguage[language][42] : myLanguage[language][30]), 135, 0);
             OneBigLineSprite.pushSprite(24, 118);
             break;
+
+          case ITEM10:
+            Infoboxprint(myLanguage[language][292]);
+            if (handleCreateNewLogbook()) OneBigLineSprite.drawString(myLanguage[language][293], 135, 0); else OneBigLineSprite.drawString(myLanguage[language][294], 135, 0);
+            OneBigLineSprite.pushSprite(24, 118);
+
+            if (hardwaremodel == PORTABLE_TOUCH_ILI9341) {
+              tft.fillRoundRect(130, 154, 60, 40, 6, FrameColor);
+              tft.drawRoundRect(130, 154, 60, 40, 6, ActiveColor);
+              tftPrint(0, "OK", 160, 162, (CurrentTheme == 7 ? White : ActiveColor), ActiveColorSmooth, 28);
+            }
+            break;
         }
         break;
 
@@ -4705,6 +5842,11 @@ void DoMenu() {
               case 2:
                 tftPrint(0, myLanguage[language][274], 160, 175, ActiveColor, ActiveColorSmooth, 16);
                 break;
+            }
+            if (hardwaremodel == PORTABLE_TOUCH_ILI9341) {
+              tft.fillRoundRect(240, 36, 60, 40, 6, FrameColor);
+              tft.drawRoundRect(240, 36, 60, 40, 6, ActiveColor);
+              tftPrint(0, "OK", 270, 44, (CurrentTheme == 7 ? White : ActiveColor), ActiveColorSmooth, 28);
             }
             break;
 
@@ -4784,6 +5926,11 @@ void DoMenu() {
             }
             OneBigLineSprite.drawString(String(memstartpos + 1) + " - " + String(memstoppos + 1) + " " + String(myLanguage[language][277]), 135, 0);
             OneBigLineSprite.pushSprite(24, 148);
+            if (hardwaremodel == PORTABLE_TOUCH_ILI9341) {
+              tft.fillRoundRect(240, 36, 60, 40, 6, FrameColor);
+              tft.drawRoundRect(240, 36, 60, 40, 6, ActiveColor);
+              tftPrint(0, "OK", 270, 44, (CurrentTheme == 7 ? White : ActiveColor), ActiveColorSmooth, 28);
+            }
             break;
         }
         break;
@@ -4845,10 +5992,9 @@ String removeNewline(String inputString) {
   return outputString;
 }
 
-void drawButton(const char* text, byte button_number, bool active) {
+void drawButton(const char* text, byte button_number, bool active, bool selected) {
   const int buttonWidth = 70;
   const int buttonHeight = 30;
-  const int cornerRadius = 6;
   const int spacingX = 10;
   const int spacingY = 10;
   const int numColumns = 4;
@@ -4865,8 +6011,44 @@ void drawButton(const char* text, byte button_number, bool active) {
   int x = startX + col * (buttonWidth + spacingX);
   int y = startY + row * (buttonHeight + spacingY);
 
-  tft.fillRoundRect(x, y, buttonWidth, buttonHeight, cornerRadius, (active ? InsignificantColor : FrameColor));
-  tft.drawRoundRect(x, y, buttonWidth, buttonHeight, cornerRadius, ActiveColor);
+  // Draw the selection outline
+  if (selected) {
+    tft.drawRect(x - 2, y - 2, buttonWidth + 4, buttonHeight + 4, PrimaryColor);
+    tft.drawRect(x - 1, y - 1, buttonWidth + 2, buttonHeight + 2, PrimaryColor);
+  } else {
+    tft.drawRect(x - 2, y - 2, buttonWidth + 4, buttonHeight + 4, BackgroundColor);
+    tft.drawRect(x - 1, y - 1, buttonWidth + 2, buttonHeight + 2, BackgroundColor);
+  }
 
-  tftPrint(0, text, x + buttonWidth / 2, y + buttonHeight / 4, (active ? FrameColor : PrimaryColor), (active ? InsignificantColor : PrimaryColorSmooth), 16);
+
+  // Draw the button fill
+  tft.pushImage (x, y, 70, 30, (CurrentTheme == 7 ? bwselector_wo : bwselector));
+
+
+  // Draw the small line at the bottom (narrower, centered, and 3px up)
+  int lineHeight = 4;                         // Height of the bottom line
+  int lineWidth = (buttonWidth / 2) - 6;      // Half the button width, minus 6px
+  int lineX = x + (buttonWidth - lineWidth) / 2; // Center the line horizontally
+  int lineY = y + buttonHeight - lineHeight - 3; // Move the line 3px up
+  if (button_number != 19) tft.fillRect(lineX, lineY, lineWidth, lineHeight, (active ? InsignificantColor : GreyoutColor));
+
+  // Draw the button text
+  tftPrint(0, text, x + buttonWidth / 2, y + (buttonHeight / 4) - 2, ActiveColor, ActiveColorSmooth, 16);
+}
+
+String shortLine(String text) {
+  String tempText = text;
+
+  if (PSSprite.textWidth(tempText + "...") > 155) { // Include "..." in width check
+    while (PSSprite.textWidth(tempText + "...") > 155 && tempText.length() > 0) {
+      // Safely remove the last UTF-8 character
+      int lastCharIndex = tempText.length() - 1;
+      while (lastCharIndex > 0 && (tempText[lastCharIndex] & 0xC0) == 0x80) {
+        lastCharIndex--; // Skip over continuation bytes
+      }
+      tempText = tempText.substring(0, lastCharIndex); // Remove last character
+    }
+    text = tempText + "..."; // Add "..." to the truncated text
+  }
+  return text;
 }

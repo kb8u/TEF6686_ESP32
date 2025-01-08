@@ -11,23 +11,6 @@
 #define SMETERPIN       27
 #define CONTRASTPIN     2
 
-#define ITEM_GAP        20
-#define ITEM1           30
-#define ITEM2           50
-#define ITEM3           70
-#define ITEM4           90
-#define ITEM5           110
-#define ITEM6           130
-#define ITEM7           150
-#define ITEM8           170
-#define ITEM9           190
-#define ITEM10          210
-
-enum menupage {INDEX, MAINSETTINGS, AUDIOSETTINGS, DISPLAYSETTINGS, RDSSETTINGS, FMSETTINGS, AMSETTINGS, CONNECTIVITY, DXMODE, AUTOMEM};
-
-extern byte menuitem;
-extern byte items[10];
-
 extern bool advancedRDS;
 extern bool afmethodBold;
 extern bool afpage;
@@ -86,6 +69,7 @@ extern byte bandforbidden;
 extern byte batteryold;
 extern byte batteryoptions;
 extern byte BWset;
+extern byte BWsettemp;
 extern byte ContrastSet;
 extern byte CurrentSkin;
 extern byte CurrentTheme;
@@ -96,12 +80,15 @@ extern byte fmdefaultstepsize;
 extern byte fmnb;
 extern byte fmdeemphasis;
 extern byte freqfont;
+extern byte EQset;
+extern byte iMSset;
 extern byte amcodect;
 extern byte amcodectcount;
 extern byte amgain;
 extern byte hardwaremodel;
 extern byte HighCutLevel;
 extern byte HighCutOffset;
+extern byte items[10];
 extern byte language;
 extern byte licold;
 extern byte longbandpress;
@@ -110,6 +97,7 @@ extern byte memdoublepi;
 extern byte mempionly;
 extern byte memstartpos;
 extern byte memstoppos;
+extern byte menuitem;
 extern byte menupage;
 extern byte MSold;
 extern byte poweroptions;
@@ -210,6 +198,7 @@ extern unsigned int mappedfreqold3[20];
 extern unsigned int memstartfreq;
 extern unsigned int memstopfreq;
 extern unsigned long scantimer;
+extern byte items[10];
 
 extern TFT_eSPI tft;
 extern TEF6686 radio;
@@ -217,6 +206,7 @@ extern WiFiConnect wc;
 extern TFT_eSprite MenuInfobox;
 extern TFT_eSprite FullLineSprite;
 extern TFT_eSprite OneBigLineSprite;
+extern TFT_eSprite PSSprite;
 
 void BuildAFScreen();
 void BuildMenu();
@@ -228,9 +218,11 @@ void MenuDown();
 void DoMenu();
 void doTheme();
 void Infoboxprint(const char* input);
-void drawButton(const char* text, byte button_number, bool active);
+void drawButton(const char* text, byte button_number, bool active, bool selected);
 String removeNewline(String inputString);
+String shortLine(String text);
 void showMenuOpenTouchButtons();
+void showBWSelector();
 
 extern void ShowFreq(int mode);
 extern void ShowBandSelectionFM(bool notglanceview, bool normaldisplay);
@@ -254,4 +246,5 @@ extern void setAutoSpeedSPI();
 extern void showAutoSquelch(bool mode);
 extern uint8_t doAutoMemory(uint16_t startfreq, uint16_t stopfreq, uint8_t startmem, uint8_t stopmem, bool rdsonly, uint8_t doublepi);
 extern void ClearMemoryRange(uint8_t start, uint8_t stop);
+extern bool handleCreateNewLogbook();
 #endif

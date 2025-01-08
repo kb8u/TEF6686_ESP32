@@ -8,6 +8,8 @@
 #include <TimeLib.h>
 #include <TFT_eSPI.h>               // https://github.com/ohmytime/TFT_eSPI_DynamicSpeed/archive/refs/heads/master.zip (please then edit the User_Setup.h as described in the Wiki)
 #include <Hash.h>                   // https://github.com/bbx10/Hash_tng/archive/refs/heads/master.zip
+#include <WebServer.h>
+#include <SPIFFS.h>
 #include "src/WiFiConnect.h"
 #include "src/WiFiConnectParam.h"
 #include "src/NTPupdate.h"
@@ -42,7 +44,6 @@
 
 #define DYNAMIC_SPI_SPEED   // uncomment to enable dynamic SPI Speed https://github.com/ohmytime/TFT_eSPI_DynamicSpeed
 
-
 #ifdef ARS
 TFT_eSPI tft = TFT_eSPI(320, 240);
 #else
@@ -66,6 +67,7 @@ bool batterydetect = true;
 bool beepresetstart;
 bool beepresetstop;
 bool BWreset;
+bool bwtouchtune;
 bool BWtune;
 bool change;
 bool compressedold;
@@ -75,6 +77,7 @@ bool dynamicPTYold;
 bool edgebeep;
 bool externaltune;
 bool findMemoryAF;
+bool firstTouchHandled = false;
 bool flashing;
 bool fmsi;
 bool fullsearchrds;
@@ -128,6 +131,7 @@ bool StereoToggle;
 bool store;
 bool TAold;
 bool TPold;
+bool touchrepeat = false;
 bool touch_detect;
 bool tuned;
 bool USBmode;
@@ -155,9 +159,11 @@ byte battery;
 byte batteryold;
 byte batteryoptions;
 byte BWset;
+byte BWsettemp;
 byte BWsetAM;
 byte BWsetFM;
 byte BWsetRecall;
+byte BWtemp;
 byte charwidth = 8;
 byte hardwaremodel;
 byte ContrastSet;
@@ -179,6 +185,7 @@ byte amgain;
 byte freqoldcount;
 byte HighCutLevel;
 byte HighCutOffset;
+byte items[10] = {10, static_cast<byte>(dynamicspi ? 10 : 9), 7, 10, 10, 10, 9, 6, 10, 9};
 byte iMSEQ;
 byte iMSset;
 byte language;
@@ -191,6 +198,7 @@ byte memoryposstatus;
 byte mempionly;
 byte memstartpos;
 byte memstoppos;
+byte menuitem;
 byte menupage;
 byte MSold;
 byte poweroptions;
@@ -403,6 +411,7 @@ unsigned long eonticker;
 unsigned long eontickerhold;
 unsigned long flashingtimer;
 unsigned long keypadtimer;
+unsigned long lastTouchTime = 0;
 unsigned long lowsignaltimer;
 unsigned long ModulationpreviousMillis;
 unsigned long ModulationpeakPreviousMillis;
@@ -437,6 +446,8 @@ WiFiConnect wc;
 WiFiServer Server(7373);
 WiFiClient RemoteClient;
 WiFiUDP Udp;
+WebServer webserver(80);
+
 hw_timer_t *timScreensaver = NULL;
 byte screensaver_IRQ = OFF;
 
@@ -631,6 +642,10 @@ void setup() {
   tft.init();
   tft.initDMA();
 
+  webserver.on("/", handleRoot);
+  webserver.on("/downloadCSV", HTTP_GET, handleDownloadCSV);
+  webserver.on("/logo.png", handleLogo);
+
   doTheme();
 
   if (displayflip == 0) {
@@ -667,6 +682,9 @@ void setup() {
   tft.setSwapBytes(true);
   tft.fillScreen(BackgroundColor);
 
+  SPIFFS.begin();
+  if (!SPIFFS.exists("/logbook.csv")) handleCreateNewLogbook();
+
   FrequencySprite.createSprite(200, 50);
   FrequencySprite.setTextDatum(TR_DATUM);
   FrequencySprite.setSwapBytes(true);
@@ -676,6 +694,7 @@ void setup() {
 
   PSSprite.createSprite(150, 32);
   PSSprite.setTextDatum(TL_DATUM);
+  PSSprite.setSwapBytes(true);
 
   SquelchSprite.createSprite(47, 19);
   SquelchSprite.setTextDatum(TL_DATUM);
@@ -803,6 +822,8 @@ void setup() {
     delay(30);
   }
 
+  tft.fillRect(120, 230, 16, 6, PrimaryColor);
+
   TEF = EEPROM.readByte(EE_BYTE_TEF);
 
   if (TEF != 102 && TEF != 205) SetTunerPatch();
@@ -814,7 +835,6 @@ void setup() {
 
   radio.getIdentification(device, hw, sw);
   if (TEF != (highByte(hw) * 100 + highByte(sw))) SetTunerPatch();
-  tft.fillRect(120, 230, 16, 6, PrimaryColor);
 
   if (lowByte(device) == 14) {
     fullsearchrds = false;
@@ -915,16 +935,31 @@ void setup() {
 }
 
 void loop() {
+  if (wifi) webserver.handleClient();
+
   if (hardwaremodel == PORTABLE_TOUCH_ILI9341 && touch_detect) {
-    if (tft.getTouchRawZ() > 100) {
+    if (tft.getTouchRawZ() > 100) {  // Check if the touch is active
       uint16_t x, y;
       tft.getTouch(&x, &y);
       if (x > 0 || y > 0) {
-        doTouchEvent(x, y);
+        if (!firstTouchHandled) {
+          // Handle the initial touch event immediately
+          doTouchEvent(x, y);
+          firstTouchHandled = true;  // Mark the first touch as handled
+          lastTouchTime = millis(); // Start tracking the time for the delay
+        } else if (touchrepeat) {
+          // Check if the initial 0.5-second delay has passed
+          if (millis() - lastTouchTime >= 500) {
+            // Repeat the touch action continuously without delay
+            doTouchEvent(x, y);
+          }
+        }
       }
+    } else {
+      // Touch has been released
+      firstTouchHandled = false;  // Reset the first touch flag
+      touch_detect = false;       // Reset the touch detection flag
     }
-    delay(100);
-    touch_detect = false;
   }
 
   Communication();
@@ -1168,7 +1203,7 @@ void loop() {
       tftPrint(-1, "PS:", 3, 193, ActiveColor, ActiveColorSmooth, 16);
       tftPrint(-1, "RT:", 3, 221, ActiveColor, ActiveColorSmooth, 16);
       tftPrint(-1, "PTY:", 3, 163, ActiveColor, ActiveColorSmooth, 16);
-      if (!showmodulation) tft.drawLine(20, 143, 204, 143, GreyoutColor); else tft.drawLine(20, 143, 204, 143, Darkgrey);
+      if (!showmodulation) tft.drawLine(16, 143, 203, 143, GreyoutColor); else tft.drawLine(16, 143, 203, 143, ActiveColor);
     }
     LowLevelInit = true;
   }
@@ -1200,7 +1235,7 @@ void loop() {
         tftPrint(-1, "PS:", 3, 193, GreyoutColor, BackgroundColor, 16);
         tftPrint(-1, "RT:", 3, 221, GreyoutColor, BackgroundColor, 16);
         tftPrint(-1, "PTY:", 3, 163, GreyoutColor, BackgroundColor, 16);
-        tft.drawLine(20, 143, 204, 143, GreyoutColor);
+        tft.drawLine(16, 143, 203, 143, GreyoutColor);
         tft.drawBitmap(122, 5, RDSLogo, 35, 22, GreyoutColor);
       }
       LowLevelInit = false;
@@ -1235,30 +1270,6 @@ void loop() {
       if (millis() >= tuningtimer + 200) readRds();
       GetData();
       if (!screenmute && !afscreen && !advancedRDS) ShowModLevel();
-    }
-  }
-
-  if (menu && menuopen && menupage == FMSETTINGS && menuoption == ITEM4) {
-    if (band < BAND_GAP) radio.getStatus(SStatus, USN, WAM, OStatus, BW, MStatus, CN); else radio.getStatusAM(SStatus, USN, WAM, OStatus, BW, MStatus, CN);
-    if (millis() >= lowsignaltimer + 500 || change) {
-      lowsignaltimer = millis();
-      change = false;
-      if (SStatus > SStatusold || SStatus < SStatusold) {
-        switch (CurrentTheme) {
-          case 7: SignalSprite.pushImage(-87, -119, 292, 170, popupbackground_wo); break;
-          default: SignalSprite.pushImage(-87, -119, 292, 170, popupbackground); break;
-        }
-
-        SignalSprite.setTextDatum(TR_DATUM);
-        SignalSprite.loadFont(FONT48);
-        SignalSprite.drawString(String(SStatus / 10), 58, 0);
-        SignalSprite.unloadFont();
-        SignalSprite.loadFont(FONT28);
-        SignalSprite.drawString("." + String(abs(SStatus % 10)), 78, 0);
-        SignalSprite.unloadFont();
-        SignalSprite.pushSprite(100, 149);
-        SStatusold = SStatus;
-      }
     }
   }
 
@@ -2432,6 +2443,11 @@ void BWButtonPress() {
       while (digitalRead(BWBUTTON) == LOW && counter - counterold <= 1000) counter = millis();
 
       if (counter - counterold < 1000) {
+        BuildBWSelector();
+        freq_in = 0;
+        BWtune = true;
+        BWtemp = BWset;
+      } else {
         if (band == BAND_FM || band == BAND_OIRT) {
           doStereoToggle();
         } else {
@@ -2439,14 +2455,11 @@ void BWButtonPress() {
           freq_in = 0;
           BWtune = true;
         }
-      } else {
-        BuildBWSelector();
-        freq_in = 0;
-        BWtune = true;
       }
-      delay(100);
     }
   }
+  while (digitalRead(BWBUTTON) == LOW) delay(50);
+  delay(100);
 }
 
 void doStereoToggle() {
@@ -2512,6 +2525,8 @@ void ModeButtonPress() {
             menupage = INDEX;
             menuitem = 0;
             if (spispeed == 7) tft.setSPISpeed(40);
+            PSSprite.unloadFont();
+            if (language == LANGUAGE_CHS) PSSprite.loadFont(FONT16_CHS); else PSSprite.loadFont(FONT16);
             BuildMenu();
             freq_in = 0;
             menu = true;
@@ -2558,6 +2573,8 @@ void ModeButtonPress() {
             menuoption = ITEM1;
             menupage = INDEX;
             menuitem = 0;
+            PSSprite.unloadFont();
+            if (language == LANGUAGE_CHS) PSSprite.loadFont(FONT16_CHS); else PSSprite.loadFont(FONT16);
             BuildMenu();
             freq_in = 0;
           }
@@ -2723,53 +2740,10 @@ void ButtonPress() {
           }
         } else {
           if (band < BAND_GAP) {
-            if (iMSEQ == 0) iMSEQ = 1;
-
-            if (iMSEQ == 4) {
-              iMSset = 0;
-              EQset = 0;
-              updateiMS();
-              updateEQ();
-              iMSEQ = 0;
-            }
-            if (iMSEQ == 3) {
-              iMSset = 1;
-              EQset = 0;
-              updateiMS();
-              updateEQ();
-              iMSEQ = 4;
-            }
-            if (iMSEQ == 2) {
-              iMSset = 0;
-              EQset = 1;
-              updateiMS();
-              updateEQ();
-              iMSEQ = 3;
-            }
-            if (iMSEQ == 1) {
-              iMSset = 1;
-              EQset = 1;
-              updateiMS();
-              updateEQ();
-              iMSEQ = 2;
-            }
-            EEPROM.writeByte(EE_BYTE_IMSSET, iMSset);
-            EEPROM.writeByte(EE_BYTE_EQSET, EQset);
-            EEPROM.commit();
-            if (XDRGTKUSB || XDRGTKTCP) DataPrint("G" + String(!EQset) + String(!iMSset) + "\n");
-          } else {
-            if (band == BAND_SW && tunemode != TUNE_MEM) {
-              nowToggleSWMIBand = !nowToggleSWMIBand;
-              tunemode = TUNE_MAN;
-              EEPROM.writeByte(EE_BYTE_BANDAUTOSW, nowToggleSWMIBand);
-              EEPROM.commit();
-              if (!screenmute) {
-                tftPrint(0, "AUTO", 22, 60, BackgroundColor, BackgroundColor, 16);
-                tftPrint(0, "BAND", 22, 60, BackgroundColor, BackgroundColor, 16);
-              }
-              doTuneMode();
-              ShowTuneMode();
-            }
+            if (addRowToCSV()) ShowFreq(2); else ShowFreq(3);
+            delay(200);
+            while (digitalRead(ROTARY_BUTTON) == LOW) delay(50);
+            ShowFreq(0);
           }
         }
       }
@@ -2779,9 +2753,38 @@ void ButtonPress() {
     } else {
       if (menu) DoMenu();
       if (BWtune) {
-        BuildDisplay();
-        freq_in = 0;
-        SelectBand();
+        if (BWsettemp == 18 || BWsettemp == 19) {
+          if (BWsettemp == 18) iMSset = !iMSset;
+          if (BWsettemp == 19) EQset = !EQset;
+          if (!iMSset && !EQset) iMSEQ = 0;
+          if (iMSset && EQset) iMSEQ = 2;
+          if (!iMSset && EQset) iMSEQ = 3;
+          if (iMSset && !EQset) iMSEQ = 4;
+          EEPROM.writeByte(EE_BYTE_IMSSET, iMSset);
+          EEPROM.writeByte(EE_BYTE_EQSET, EQset);
+          EEPROM.commit();
+          updateiMS();
+          updateEQ();
+          if (XDRGTKUSB || XDRGTKTCP) DataPrint("G" + String(!EQset) + String(!iMSset) + "\n");
+          showBWSelector();
+          if (band < BAND_GAP) {
+            drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsFM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp || (BWsettemp == 17 && BWset == 0) || (BWsettemp == 18 && !iMSset) || (BWsettemp == 19 && !EQset) ? true : false), true);
+          } else {
+            drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsAM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp || (BWsettemp == 17 && BWset == 0) || (BWsettemp == 18 && !iMSset) || (BWsettemp == 19 && !EQset) ? true : false), true);
+          }
+        } else if (BWsettemp == 20) {
+          BuildDisplay();
+          freq_in = 0;
+          SelectBand();
+        } else {
+          doBW();
+          showBWSelector();
+          if (band < BAND_GAP) {
+            drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsFM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp || (BWsettemp == 17 && BWset == 0) || (BWsettemp == 18 && !iMSset) || (BWsettemp == 19 && !EQset) ? true : false), true);
+          } else {
+            drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsAM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp || (BWsettemp == 17 && BWset == 0) || (BWsettemp == 18 && !iMSset) || (BWsettemp == 19 && !EQset) ? true : false), true);
+          }
+        }
       }
     }
   }
@@ -3159,17 +3162,32 @@ void ShowFreq(int mode) {
         }
 
         FrequencySprite.setTextDatum(TR_DATUM);
+        switch (mode) {
+          case 0:
+            FrequencySprite.fillSprite(BackgroundColor);
+            FrequencySprite.setTextColor(FreqColor, FreqColorSmooth, false);
+            FrequencySprite.drawString(String(freq / 100) + "." + (freq % 100 < 10 ? "0" : "") + String(freq % 100) + " ", 218, -6);
+            FrequencySprite.pushSprite(46, 46);
+            freqold = freq;
+            break;
 
-        if (mode == 0) {
-          FrequencySprite.fillSprite(BackgroundColor);
-          FrequencySprite.setTextColor(FreqColor, FreqColorSmooth, false);
-          FrequencySprite.drawString(String(freq / 100) + "." + (freq % 100 < 10 ? "0" : "") + String(freq % 100) + " ", 218, -6);
-          FrequencySprite.pushSprite(46, 46);
-          freqold = freq;
-        } else if (mode == 1) {
-          FrequencySprite.fillSprite(BackgroundColor);
-          FrequencySprite.pushSprite(46, 46);
-          tftPrint(0, myLanguage[language][34], 146, 58, ActiveColor, ActiveColorSmooth, 28);
+          case 1:
+            FrequencySprite.fillSprite(BackgroundColor);
+            FrequencySprite.pushSprite(46, 46);
+            tftPrint(0, myLanguage[language][34], 146, 58, ActiveColor, ActiveColorSmooth, 28);
+            break;
+
+          case 2:
+            FrequencySprite.fillSprite(BackgroundColor);
+            FrequencySprite.pushSprite(46, 46);
+            tftPrint(0, myLanguage[language][290], 146, 58, ActiveColor, ActiveColorSmooth, 28);
+            break;
+
+          case 3:
+            FrequencySprite.fillSprite(BackgroundColor);
+            FrequencySprite.pushSprite(46, 46);
+            tftPrint(0, myLanguage[language][291], 146, 58, ActiveColor, ActiveColorSmooth, 28);
+            break;
         }
         FrequencySprite.unloadFont();
       }
@@ -3267,8 +3285,8 @@ void ShowSignalLevel() {
         tftReplace(1, "." + String(abs(SStatusold % 10)), "." + String(abs(SStatusprint % 10)), 310, 105, FreqColor, FreqColorSmooth, BackgroundColor, 28);
 
         if (band < BAND_GAP) segments = map(SStatus / 10, 0, 70, 0, 100); else segments = (SStatus + 200) / 10;
-        tft.fillRect(16, 105, 2 * constrain(segments, 0, 54), 6, BarInsignificantColor);
-        tft.fillRect(16 + 2 * 54, 105, 2 * (constrain(segments, 54, 94) - 54), 6, BarSignificantColor);
+        tft.fillRect(16, 105, 2 * constrain(segments, 0, 63), 6, BarInsignificantColor);
+        tft.fillRect(16 + 2 * 63, 105, 2 * (constrain(segments, 63, 94) - 63), 6, BarSignificantColor);
         tft.fillRect(16 + 2 * constrain(segments, 0, 94), 105, 2 * (94 - constrain(segments, 0, 94)), 6, GreyoutColor);
       }
       SStatusold = SStatusprint;
@@ -3468,9 +3486,9 @@ void ShowModLevel() {
       }
     }
 
-    tft.fillRect(16, 133, 2 * constrain(DisplayedSegments, 0, 54), 6, ModBarInsignificantColor);
+    tft.fillRect(16, 133, 2 * constrain(DisplayedSegments, 0, 63), 6, ModBarInsignificantColor);
 
-    if (DisplayedSegments > 54) tft.fillRect(16 + 2 * 54, 133, 2 * (DisplayedSegments - 54), 6, ModBarSignificantColor);
+    if (DisplayedSegments > 63) tft.fillRect(16 + 2 * 63, 133, 2 * (DisplayedSegments - 63), 6, ModBarSignificantColor);
 
     int greyStart = 16 + 2 * DisplayedSegments;
     int greyWidth = 2 * (94 - DisplayedSegments);
@@ -3667,13 +3685,13 @@ void updateBW() {//todo air
 void updateiMS() {
   if (band < BAND_GAP) {
     if (iMSset == 0) {
-      if (!screenmute && !advancedRDS && !afscreen) {
+      if (!screenmute && !advancedRDS && !afscreen && !BWtune) {
         tft.fillRoundRect(249, 57, 30, 18, 2, SecondaryColor);
         tftPrint(0, "iMS", 265, 59, BackgroundColor, SecondaryColor, 16);
       }
       radio.setiMS(1);
     } else {
-      if (!screenmute && !advancedRDS && !afscreen) {
+      if (!screenmute && !advancedRDS && !afscreen && !BWtune) {
         tft.fillRoundRect(249, 57, 30, 18, 2, GreyoutColor);
         tftPrint(0, "iMS", 265, 59, BackgroundColor, GreyoutColor, 16);
       }
@@ -3685,13 +3703,13 @@ void updateiMS() {
 void updateEQ() {
   if (band < BAND_GAP) {
     if (EQset == 0) {
-      if (!screenmute && !advancedRDS && !afscreen) {
+      if (!screenmute && !advancedRDS && !afscreen && !BWtune) {
         tft.fillRoundRect(287, 57, 30, 18, 2, SecondaryColor);
         tftPrint(0, "EQ", 301, 59, BackgroundColor, SecondaryColor, 16);
       }
       radio.setEQ(1);
     } else {
-      if (!screenmute && !advancedRDS && !afscreen) {
+      if (!screenmute && !advancedRDS && !afscreen && !BWtune) {
         tft.fillRoundRect(287, 57, 30, 18, 2, GreyoutColor);
         tftPrint(0, "EQ", 301, 59, BackgroundColor, GreyoutColor, 16);
       }
@@ -3747,6 +3765,8 @@ void updateSWMIBand() {
 }
 
 void doBW() {
+  if (BWtune && !bwtouchtune) BWset = BWsettemp;
+
   if (band < BAND_GAP) {
     if (BWset > 16) BWset = 0;
 
@@ -3812,34 +3832,31 @@ void doBW() {
 void doBWtuneDown() {
   rotary = 0;
   if (band < BAND_GAP) {
-    if (BWset == 0) drawButton(BWButtonLabelsFM[16], 16, false); else drawButton(BWButtonLabelsFM[BWset - 1], BWset - 1, false);
-    BWset--;
-    if (BWset > 16) BWset = 16;
-    if (BWset == 0) drawButton(BWButtonLabelsFM[16], 16, true); else drawButton(BWButtonLabelsFM[BWset - 1], BWset - 1, true);
+    drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsFM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp || (BWsettemp == 17 && BWset == 0) || (BWsettemp == 18 && !iMSset) || (BWsettemp == 19 && !EQset) ? true : false), false);
+    BWsettemp--;
+    if (BWsettemp > 20 || BWsettemp == 0) BWsettemp = 20;
+    drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsFM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp || (BWsettemp == 17 && BWset == 0) || (BWsettemp == 18 && !iMSset) || (BWsettemp == 19 && !EQset) ? true : false), true);
   } else {
-    drawButton(BWButtonLabelsAM[BWset - 1], BWset - 1, false);
-    BWset--;
-    if (BWset == 0) BWset = 4;
-    drawButton(BWButtonLabelsAM[BWset - 1], BWset - 1, true);
+    drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsAM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp ? true : false), false);
+    BWsettemp--;
+    if (BWsettemp > 4 && BWsettemp < 20) BWsettemp = 4; else if (BWsettemp == 0) BWsettemp = 20;
+    drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsAM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp ? true : false), true);
   }
-
-  doBW();
 }
 
 void doBWtuneUp() {
   rotary = 0;
   if (band < BAND_GAP) {
-    if (BWset == 0) drawButton(BWButtonLabelsFM[16], 16, false); else drawButton(BWButtonLabelsFM[BWset - 1], BWset - 1, false);
-    BWset++;
-    if (BWset > 16) BWset = 0;
-    if (BWset == 0) drawButton(BWButtonLabelsFM[16], 16, true); else drawButton(BWButtonLabelsFM[BWset - 1], BWset - 1, true);
+    drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsFM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp || (BWsettemp == 17 && BWset == 0) || (BWsettemp == 18 && !iMSset) || (BWsettemp == 19 && !EQset) ? true : false), false);
+    BWsettemp++;
+    if (BWsettemp > 20) BWsettemp = 1;
+    drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsFM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp || (BWsettemp == 17 && BWset == 0) || (BWsettemp == 18 && !iMSset) || (BWsettemp == 19 && !EQset) ? true : false), true);
   } else {
-    drawButton(BWButtonLabelsAM[BWset - 1], BWset - 1, false);
-    BWset++;
-    if (BWset > 4) BWset = 1;
-    drawButton(BWButtonLabelsAM[BWset - 1], BWset - 1, true);
+    drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsAM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp ? true : false), false);
+    BWsettemp++;
+    if (BWsettemp > 4 && BWsettemp < 20) BWsettemp = 20; else if (BWsettemp > 20) BWsettemp = 1;
+    drawButton((BWsettemp == 20 ? "OK" : BWButtonLabelsAM[BWsettemp - 1]), BWsettemp - 1, (BWset == BWsettemp ? true : false), true);
   }
-  doBW();
 }
 
 void doTuneMode() {
@@ -4331,9 +4348,18 @@ void SetTunerPatch() {
 
 void read_encoder() {
   if (!digitalRead(ROTARY_PIN_A) || !digitalRead(ROTARY_PIN_B)) {
-    if (millis() - rotarytimer >= 15) { rotarycounteraccelerator = 2; rotarycounter = 0; } // Steady fast
-    if (millis() - rotarytimer >= 30) { rotarycounteraccelerator = 4; rotarycounter = 0; }
-    if (millis() - rotarytimer >= 45) { rotarycounteraccelerator = 6; rotarycounter = 0; } // Quick flicks
+    if (millis() - rotarytimer >= 15) {
+      rotarycounteraccelerator = 2;  // Steady fast
+      rotarycounter = 0;
+    }
+    if (millis() - rotarytimer >= 30) {
+      rotarycounteraccelerator = 4;
+      rotarycounter = 0;
+    }
+    if (millis() - rotarytimer >= 45) {
+      rotarycounteraccelerator = 6;  // Quick flicks
+      rotarycounter = 0;
+    }
   }
 
   static uint8_t old_AB = 3;
@@ -4630,12 +4656,12 @@ void UpdateFonts(byte mode) {
 
       if (language == LANGUAGE_CHS) {
         RDSSprite.loadFont(FONT16_CHS);
-        PSSprite.loadFont(FONT28_CHS);
+        if (menu) PSSprite.loadFont(FONT16_CHS); else PSSprite.loadFont(FONT28_CHS);
         FullLineSprite.loadFont(FONT16_CHS);
         OneBigLineSprite.loadFont(FONT28_CHS);
       } else {
         RDSSprite.loadFont(FONT16);
-        PSSprite.loadFont(FONT28);
+        if (menu) PSSprite.loadFont(FONT16); else PSSprite.loadFont(FONT28);
         FullLineSprite.loadFont(FONT16);
         OneBigLineSprite.loadFont(FONT28);
       }
@@ -4769,6 +4795,9 @@ void endMenu() {
   if (USBmode) Serial.begin(19200); else Serial.begin(115200);
 
   leave = true;
+  PSSprite.unloadFont();
+  if (language == LANGUAGE_CHS) PSSprite.loadFont(FONT28_CHS); else PSSprite.loadFont(FONT28);
+  PSSprite.setTextDatum(TL_DATUM);
   BuildDisplay();
   SelectBand();
   ScreensaverTimerRestart();
@@ -5220,7 +5249,7 @@ void TuneFreq(int temp) {
 }
 
 void NumpadProcess(int num) {
-    if (scandxmode) {
+  if (scandxmode) {
     if (num == 127) cancelDXScan();
   } else {
     if (num == 127) {
@@ -5231,6 +5260,8 @@ void NumpadProcess(int num) {
       if (spispeed == 7) tft.setSPISpeed(40);
       submenu = true;
       menu = true;
+      PSSprite.unloadFont();
+      if (language == LANGUAGE_CHS) PSSprite.loadFont(FONT16_CHS); else PSSprite.loadFont(FONT16);
       BuildMenu();
       ScreensaverTimerSet(OFF);
     } else if (num == 13) {
@@ -5256,4 +5287,367 @@ void NumpadProcess(int num) {
       ShowNum(freq_in);
     }
   }
+}
+
+void toggleiMSEQ() {
+  if (band < BAND_GAP) {
+    if (iMSEQ == 0) iMSEQ = 1;
+
+    if (iMSEQ == 4) {
+      iMSset = 0;
+      EQset = 0;
+      updateiMS();
+      updateEQ();
+      iMSEQ = 0;
+    }
+    if (iMSEQ == 3) {
+      iMSset = 1;
+      EQset = 0;
+      updateiMS();
+      updateEQ();
+      iMSEQ = 4;
+    }
+    if (iMSEQ == 2) {
+      iMSset = 0;
+      EQset = 1;
+      updateiMS();
+      updateEQ();
+      iMSEQ = 3;
+    }
+    if (iMSEQ == 1) {
+      iMSset = 1;
+      EQset = 1;
+      updateiMS();
+      updateEQ();
+      iMSEQ = 2;
+    }
+    EEPROM.writeByte(EE_BYTE_IMSSET, iMSset);
+    EEPROM.writeByte(EE_BYTE_EQSET, EQset);
+    EEPROM.commit();
+    if (XDRGTKUSB || XDRGTKTCP) DataPrint("G" + String(!EQset) + String(!iMSset) + "\n");
+  } else {
+    if (band == BAND_SW && tunemode != TUNE_MEM) {
+      nowToggleSWMIBand = !nowToggleSWMIBand;
+      tunemode = TUNE_MAN;
+      EEPROM.writeByte(EE_BYTE_BANDAUTOSW, nowToggleSWMIBand);
+      EEPROM.commit();
+      if (!screenmute) {
+        tftPrint(0, "AUTO", 22, 60, BackgroundColor, BackgroundColor, 16);
+        tftPrint(0, "BAND", 22, 60, BackgroundColor, BackgroundColor, 16);
+      }
+      doTuneMode();
+      ShowTuneMode();
+    }
+  }
+}
+
+void handleRoot() {
+  // Attempt to open the CSV file stored in SPIFFS (File System)
+  fs::File file = SPIFFS.open("/logbook.csv", "r");
+  if (!file) {
+    // If the file could not be opened, send an error message to the browser
+    webserver.send(500, "text/plain", "Failed to open logbook");
+    return;  // Exit the function if the file cannot be opened
+  }
+
+  // Start building the HTML page to send to the browser
+  String html = "<!DOCTYPE html><html lang=\"en\"><head>";
+  html += "<meta charset=\"UTF-8\">";
+  html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+
+  // Add CSS styling for a modern, dark-themed look
+  html += "<style>";
+  html += "body {background-color: #1a1a1a; color: white; font-family: 'Arial', sans-serif; margin: 0; padding: 0;}";
+  html += "h1 {text-align: center; color: #ffffff; margin-top: 20px; font-size: 32px;}";
+  html += "img {display: block; margin: 0 auto; max-width: 100%; height: auto; padding-top: 20px;}";
+  html += "table {width: 90%; margin: 0 auto; border-collapse: collapse; border-radius: 8px; overflow: hidden;}";
+  html += "th {background-color: #333; color: white; padding: 12px; text-align: left; font-size: 18px;}";
+  html += "td {background-color: #2a2a2a; color: white; padding: 10px; text-align: left; font-size: 16px;}";
+  html += "tr:nth-child(even) {background-color: #252525;}";
+  html += "tr:hover {background-color: #444; cursor: pointer;}";
+  html += "button {background-color: #ffcc00; color: black; border: none; padding: 12px 20px; font-size: 18px; cursor: pointer; border-radius: 5px; display: block; margin: 20px auto;}";
+  html += "button:hover {background-color: #ff9900;}";
+  html += "@media (max-width: 768px) { table {width: 100%;} th, td {font-size: 14px; padding: 8px;} }";
+  html += ".go-to-bottom {position: fixed; bottom: 30px; right: 30px; background-color: #ffcc00; color: black; border: none; padding: 12px 20px; font-size: 18px; cursor: pointer; border-radius: 5px; z-index: 100;}";
+  html += "</style>";
+
+  html += "</head><body>";
+
+  // Add the logo image at the top of the page, served from SPIFFS
+  html += "<img src=\"/logo.png\" alt=\"FMdx Logo\">";
+
+  // Add a header with a dynamic title from the language array (replace with actual language logic)
+  html += "<h1>" + String(myLanguage[language][286]) + "</h1>";
+
+  // Add the "Download CSV" button, which triggers a download action when clicked
+  html += "<button onclick=\"window.location.href='/downloadCSV'\">" + String(myLanguage[language][287]) + "</button>";
+
+  // Add "Go to Bottom" button
+  html += "<button class=\"go-to-bottom\" onclick=\"scrollToBottom()\">" + String(myLanguage[language][289]) + "</button>";
+
+  // Add JavaScript for scrolling to the bottom
+  html += "<script>";
+  html += "function scrollToBottom() {";
+  html += "  window.scrollTo(0, document.body.scrollHeight);";
+  html += "}";
+  html += "</script>";
+
+  // Start the HTML table to display CSV data
+  html += "<table>";
+
+  // Read and process the first line (header row) from the CSV file
+  String header = "";
+  if (file.available()) {
+    header = file.readStringUntil('\n'); // Read the first line containing the headers
+    html += "<tr>"; // Start the header row in the table
+    int startIndex = 0;
+
+    // Split the header line by commas and create table headers (<th>) for each column
+    while (startIndex < header.length()) {
+      int endIndex = header.indexOf(',', startIndex);
+      if (endIndex == -1) endIndex = header.length(); // Handle last column (no comma after it)
+      String column = header.substring(startIndex, endIndex); // Extract the column name
+      html += "<th>" + column + "</th>"; // Add the column as a table header
+      startIndex = endIndex + 1; // Move to the next column
+    }
+    html += "</tr>"; // End the header row
+  }
+
+  // Variable to track if there is any data in the CSV file
+  bool hasData = false;
+  int rowCount = 0; // Counter for rows, used for alternating row colors
+
+  // Process the remaining lines (data rows) in the CSV file
+  while (file.available()) {
+    String line = file.readStringUntil('\n'); // Read the next line (data row)
+    if (line.length() > 0) {
+      hasData = true;  // Mark that data rows are present
+      rowCount++; // Increment the row count
+      html += "<tr>"; // Start a new row in the table
+      int startIndex = 0;
+
+      // Split the line by commas and create table data cells (<td>) for each column
+      while (startIndex < line.length()) {
+        int endIndex = line.indexOf(',', startIndex);
+        if (endIndex == -1) endIndex = line.length(); // Handle the last column
+        String cell = line.substring(startIndex, endIndex); // Extract the cell data
+        html += "<td>" + cell + "</td>"; // Add the cell data to the table
+        startIndex = endIndex + 1; // Move to the next column
+      }
+      html += "</tr>"; // End the data row
+    }
+  }
+
+  file.close(); // Close the file after reading
+
+  // If no data rows were found, display a "No data available" message in the table
+  if (!hasData) {
+    html += "<tr><td colspan=\"100%\" style=\"text-align: center; color: red;\">" + String(myLanguage[language][288]) + "</td></tr>";
+  }
+
+  // End the HTML table and body
+  html += "</table>";
+  html += "</body></html>"; // End the HTML page
+
+  // Send the generated HTML content to the browser with a 200 OK response
+  webserver.send(200, "text/html", html);
+}
+
+void handleDownloadCSV() {
+  // Attempt to open the CSV file from SPIFFS in read mode
+  fs::File file = SPIFFS.open("/logbook.csv", "r");
+
+  // Check if the file was successfully opened
+  if (!file) {
+    // If the file could not be opened, send an error response
+    webserver.send(500, "text/plain", "Failed to open logbook for download");
+    return;  // Exit the function if the file cannot be opened
+  }
+
+  // Set the headers to specify that the response will be a CSV file for download
+  webserver.sendHeader("Content-Type", "text/csv");  // Set MIME type for CSV files
+  webserver.sendHeader("Content-Disposition", "attachment; filename=logbook.csv");  // Suggests the file name for download
+
+  // Stream the CSV file content directly to the browser
+  webserver.streamFile(file, "text/csv");
+
+  // Close the file after streaming the content to release resources
+  file.close();
+}
+
+bool handleCreateNewLogbook() {
+  // Check if the file "logbook.csv" already exists
+  if (SPIFFS.exists("/logbook.csv")) {
+    // If it exists, delete the file
+    if (!SPIFFS.remove("/logbook.csv")) {
+      // Return false if the file could not be deleted
+      return false;
+    }
+  }
+
+  // Create a new "logbook.csv" file in write mode
+  fs::File file = SPIFFS.open("/logbook.csv", "w");
+
+  // Check if the file was successfully created
+  if (!file) {
+    // Return false if file creation fails
+    return false;
+  }
+
+  // Write the header to the new CSV file
+  String header = "Date,Time,Frequency,PI code,Signal,PS,RadioText\n";
+  file.print(header); // Ensure that the header is written properly
+
+  // Make sure the data is written before closing the file
+  file.flush(); // Ensure that everything is written to the file
+  file.close(); // Close the file after writing
+
+  // Return true if the function runs without problems
+  return true;
+}
+
+bool addRowToCSV() {
+  // Check if there is enough free space in SPIFFS (150 bytes or more)
+  if (SPIFFS.totalBytes() - SPIFFS.usedBytes() < 150) {
+    return false;  // Return false if there is less than 150 bytes free
+  }
+
+  // Open the logbook.csv file in append mode
+  fs::File file = SPIFFS.open("/logbook.csv", "a");
+
+  // Check if the file could not be opened
+  if (!file) {
+    return false;  // Return false if the file can't be opened
+  }
+
+  // Get the current date and time from ESP32 (using the built-in time functions)
+  String currentDateTime = getCurrentDateTime();  // Get the current date and time
+
+  // If time is not available, replace with "-"
+  if (currentDateTime == "") {
+    currentDateTime = "-,-";  // Set both date and time to "-"
+  }
+
+  // Convert frequency to a string format (XX.XX MHz)
+  int freqInt = (int)frequency;  // Assuming frequency is already a float or double, cast it to int
+
+  // Apply the necessary conversion (if any) for frequency
+  int convertedFreq = (freqInt + ConverterSet * 100) / 100;
+  String frequencyFormatted = String(convertedFreq) + "." + ((freqInt + ConverterSet * 100) % 100 < 10 ? "0" : "") + String((freqInt + ConverterSet * 100) % 100) + " MHz";  // Add " MHz"
+
+  // Format the signal strength (xx.x with the correct unit)
+  int SStatusprint = 0;
+  if (unit == 0) SStatusprint = SStatus;
+  if (unit == 1) SStatusprint = ((SStatus * 100) + 10875) / 100;
+  if (unit == 2) SStatusprint = round((float(SStatus) / 10.0 - 10.0 * log10(75) - 90.0) * 10.0);
+
+  // Choose the correct unit suffix for signal based on the `unit` value
+  String signal = String(SStatusprint / 10) + "." + String(abs(SStatusprint % 10));
+  if (unit == 0) {
+    signal += " dBμV";  // Unit for unit == 0
+  } else if (unit == 1) {
+    signal += " dBf";   // Unit for unit == 1
+  } else if (unit == 2) {
+    signal += " dBm";   // Unit for unit == 2
+  }
+
+  // Format the RadioText with enhanced option if available
+  String radioText = String(radio.rds.stationText + " " + radio.rds.stationText32);
+  if (radio.rds.hasEnhancedRT) {
+    radioText += " eRT: " + String(radio.rds.enhancedRTtext);
+  }
+
+  // Replace commas in the station name and radioText just when adding to the row
+  String stationName = radio.rds.stationName;
+  String radioTextModified = radioText;
+
+  stationName.replace(",", " ");  // Temporarily replace commas in stationName
+  radioTextModified.replace(",", " ");  // Temporarily replace commas in radioText
+
+  // Create the row data, replacing stationIDtext with picode
+  String row = currentDateTime + "," + frequencyFormatted + "," + radio.rds.picode + "," + signal + "," + stationName + "," + radioTextModified + "\n";
+
+  // Write the row to the CSV file
+  if (file.print(row)) {
+    // Successfully wrote to the file
+    file.close();
+    return true;  // Return true when the row is successfully added
+  } else {
+    // Failed to write to the file
+    file.close();
+    return false;  // Return false if there was an issue writing
+  }
+}
+
+String getCurrentDateTime() {
+  // Check if time has been set
+  if (!rtcset) {
+    return "-,-";  // Return placeholder when time is not set
+  }
+
+  // Use the ESP32's time functions (assuming time is set correctly via RDS)
+  struct tm timeInfo;
+  if (!getLocalTime(&timeInfo)) {
+    return "-,-";  // Return placeholder if time is not available
+  }
+
+  // Format date-time based on the region
+  char buf[20];  // Buffer size for formatted date string
+
+  if (radio.rds.region == 1) {
+    // USA format: MM/DD/YYYY, HH:MM AM/PM
+    strftime(buf, sizeof(buf), "%m/%d/%Y", &timeInfo);  // MM/DD/YYYY format
+
+    // Format time in 12-hour format with AM/PM
+    int hour = timeInfo.tm_hour;
+    String ampm = (hour >= 12) ? "PM" : "AM";
+    if (hour == 0) hour = 12;  // Midnight case
+    else if (hour > 12) hour -= 12;  // Convert PM to 12-hour format
+
+    String timeWithAMPM = String(hour) + ":" + (timeInfo.tm_min < 10 ? "0" : "") + String(timeInfo.tm_min) + " " + ampm;
+
+    // Return final formatted date-time for USA
+    return String(buf) + "," + timeWithAMPM;
+  } else {
+    // European format: DD/MM/YYYY, HH:MM
+    strftime(buf, sizeof(buf), "%d-%m-%Y", &timeInfo);  // DD/MM/YYYY format
+    String timeEuropean = String(timeInfo.tm_hour) + ":" + (timeInfo.tm_min < 10 ? "0" : "") + String(timeInfo.tm_min); // Add leading 0 for minutes if necessary
+    return String(buf) + "," + timeEuropean;
+  }
+}
+
+void handleLogo() {
+  fs::File file = SPIFFS.open("/logo.png", "r");
+  if (!file) {
+    webserver.send(404, "text/plain", "Logo not found");
+    return;
+  }
+  webserver.streamFile(file, "image/png");
+  file.close();
+}
+
+void printLogbookCSV() {
+  // Attempt to open the CSV file stored in SPIFFS
+  fs::File file = SPIFFS.open("/logbook.csv", "r");
+
+  // Check if the file was successfully opened
+  if (!file) {
+    Serial.println("Failed to open logbook!");
+    return;
+  }
+
+  // Print a message indicating the start of the file content
+  Serial.println("===== Start of logbook.csv =====");
+
+  // Read and print the contents of the file line by line
+  while (file.available()) {
+    String line = file.readStringUntil('\n');  // Read one line at a time
+    Serial.println(line);  // Print the line to the Serial Monitor
+  }
+
+  // Close the file after reading
+  file.close();
+
+  // Print a message indicating the end of the file content
+  Serial.println("===== End of logbook.csv =====");
 }
